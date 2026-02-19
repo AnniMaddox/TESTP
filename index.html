@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebP 透明圖快速檢查</title>
+    <style>
+      :root {
+        --bg: #f4f4f5;
+        --text: #111827;
+        --muted: #6b7280;
+        --card: #ffffff;
+        --border: #e5e7eb;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
+
+      .page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 16px;
+      }
+
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 20px;
+      }
+
+      .hint {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
+
+      input[type="file"],
+      select,
+      button,
+      input[type="range"] {
+        width: 100%;
+      }
+
+      input[type="file"],
+      select,
+      button {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #fff;
+        color: var(--text);
+        font-size: 14px;
+        padding: 8px 10px;
+      }
+
+      button {
+        cursor: pointer;
+      }
+
+      .status {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .grid {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 10px;
+      }
+
+      .item {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      .stage {
+        height: 210px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-bottom: 1px solid var(--border);
+        background: repeating-conic-gradient(#d4d4d8 0% 25%, #f4f4f5 0% 50%) 50% / 16px 16px;
+      }
+
+      .stage.bg-light {
+        background: #f8fafc;
+      }
+
+      .stage.bg-dark {
+        background: #111827;
+      }
+
+      .stage.bg-sky {
+        background: linear-gradient(180deg, #86c5ff 0%, #d7ecff 62%, #e6e6e6 100%);
+      }
+
+      .stage img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        transition: transform 0.18s ease;
+      }
+
+      .meta {
+        padding: 10px;
+      }
+
+      .name {
+        font-size: 13px;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .sub {
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="panel">
+        <h1>WebP 透明圖快速檢查</h1>
+        <p class="hint">
+          上傳你要測試的圖（WebP/PNG 都可），切背景看邊緣是否有白邊、黑邊、糊邊。
+        </p>
+        <div class="controls">
+          <div>
+            <label for="fileInput">選擇圖片（可多選）</label>
+            <input id="fileInput" type="file" accept="image/*" multiple />
+          </div>
+          <div>
+            <label for="bgMode">預覽背景</label>
+            <select id="bgMode">
+              <option value="checker">棋盤格（透明檢查）</option>
+              <option value="light">淺色</option>
+              <option value="dark">深色</option>
+              <option value="sky">天空漸層（對話頁感）</option>
+            </select>
+          </div>
+          <div>
+            <label for="scale">縮放：<span id="scaleValue">100%</span></label>
+            <input id="scale" type="range" min="50" max="220" step="5" value="100" />
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button id="clearBtn" type="button">清空預覽</button>
+          </div>
+        </div>
+        <div id="status" class="status">尚未上傳圖片</div>
+      </section>
+      <section id="grid" class="grid"></section>
+    </main>
+
+    <script>
+      const fileInput = document.getElementById('fileInput');
+      const bgMode = document.getElementById('bgMode');
+      const scale = document.getElementById('scale');
+      const scaleValue = document.getElementById('scaleValue');
+      const clearBtn = document.getElementById('clearBtn');
+      const status = document.getElementById('status');
+      const grid = document.getElementById('grid');
+
+      let urls = [];
+
+      const kb = (bytes) => `${(bytes / 1024).toFixed(1)} KB`;
+
+      const createCard = (file, src) =>
+        new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            const item = document.createElement('article');
+            item.className = 'item';
+            const stage = document.createElement('div');
+            stage.className = 'stage';
+            const shown = document.createElement('img');
+            shown.src = src;
+            shown.alt = file.name;
+            shown.style.transform = `scale(${Number(scale.value) / 100})`;
+            stage.appendChild(shown);
+            item.appendChild(stage);
+
+            const meta = document.createElement('div');
+            meta.className = 'meta';
+            meta.innerHTML = `
+              <div class="name" title="${file.name}">${file.name}</div>
+              <div class="sub">${img.naturalWidth} x ${img.naturalHeight}</div>
+              <div class="sub">${kb(file.size)}</div>
+            `;
+            item.appendChild(meta);
+            resolve(item);
+          };
+          img.src = src;
+        });
+
+      const applyBackground = () => {
+        const mode = bgMode.value;
+        document.querySelectorAll('.stage').forEach((stage) => {
+          stage.className = `stage${mode === 'checker' ? '' : ` bg-${mode}`}`;
+        });
+      };
+
+      const applyScale = () => {
+        const value = Number(scale.value);
+        scaleValue.textContent = `${value}%`;
+        document.querySelectorAll('.stage img').forEach((img) => {
+          img.style.transform = `scale(${value / 100})`;
+        });
+      };
+
+      const clearAll = () => {
+        urls.forEach((url) => URL.revokeObjectURL(url));
+        urls = [];
+        grid.innerHTML = '';
+        fileInput.value = '';
+        status.textContent = '尚未上傳圖片';
+      };
+
+      fileInput.addEventListener('change', async (event) => {
+        clearAll();
+        const files = Array.from(event.target.files || []).filter((f) => f.type.startsWith('image/'));
+        if (!files.length) {
+          status.textContent = '沒有可預覽的圖片';
+          return;
+        }
+        status.textContent = `載入中... (${files.length} 張)`;
+        const cards = await Promise.all(
+          files
+            .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
+            .map((file) => {
+              const src = URL.createObjectURL(file);
+              urls.push(src);
+              return createCard(file, src);
+            }),
+        );
+        cards.forEach((card) => grid.appendChild(card));
+        applyBackground();
+        applyScale();
+        status.textContent = `已載入 ${files.length} 張`;
+      });
+
+      bgMode.addEventListener('change', applyBackground);
+      scale.addEventListener('input', applyScale);
+      clearBtn.addEventListener('click', clearAll);
+    </script>
+  </body>
+</html>
