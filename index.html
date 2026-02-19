@@ -1,281 +1,398 @@
-<!doctype html>
-<html lang="zh-Hant">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WebP 透明圖快速檢查</title>
-    <style>
-      :root {
-        --bg: #f4f4f5;
-        --text: #111827;
-        --muted: #6b7280;
-        --card: #ffffff;
-        --border: #e5e7eb;
-      }
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>PNG vs WebP 對比</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
 
-      * {
-        box-sizing: border-box;
-      }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    background: #1a1a1a;
+    color: #eee;
+    min-height: 100vh;
+  }
 
-      body {
-        margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
-        background: var(--bg);
-        color: var(--text);
-      }
+  /* ── Header ── */
+  .header {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: #111;
+    border-bottom: 1px solid #333;
+    padding: 12px 16px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+  }
 
-      .page {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 16px;
-      }
+  .header h1 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+  }
 
-      .panel {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 14px;
-        padding: 14px;
-      }
+  .controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    flex: 1;
+  }
 
-      h1 {
-        margin: 0 0 8px;
-        font-size: 20px;
-      }
+  .btn {
+    padding: 6px 12px;
+    border-radius: 20px;
+    border: 1.5px solid #444;
+    background: transparent;
+    color: #ccc;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .btn.active { border-color: #a78bfa; background: #a78bfa22; color: #c4b5fd; }
+  .btn:active { transform: scale(0.95); }
 
-      .hint {
-        margin: 0;
-        color: var(--muted);
-        font-size: 13px;
-      }
+  .upload-btn {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1.5px solid #6d28d9;
+    background: #6d28d922;
+    color: #c4b5fd;
+    font-size: 12px;
+    cursor: pointer;
+    white-space: nowrap;
+  }
 
-      .controls {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
-        gap: 10px;
-        margin-top: 12px;
-      }
+  /* ── Upload zone ── */
+  .upload-zone {
+    margin: 40px auto;
+    max-width: 480px;
+    border: 2px dashed #444;
+    border-radius: 20px;
+    padding: 48px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .upload-zone:hover { border-color: #a78bfa; }
+  .upload-zone .icon { font-size: 48px; margin-bottom: 12px; }
+  .upload-zone p { color: #888; font-size: 14px; line-height: 1.6; }
+  .upload-zone strong { color: #c4b5fd; }
+  #fileInput { display: none; }
 
-      label {
-        display: block;
-        font-size: 12px;
-        color: var(--muted);
-        margin-bottom: 6px;
-      }
+  /* ── Grid ── */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+    padding: 16px;
+  }
 
-      input[type="file"],
-      select,
-      button,
-      input[type="range"] {
-        width: 100%;
-      }
+  /* ── Card ── */
+  .card {
+    border-radius: 16px;
+    overflow: hidden;
+    background: #222;
+    border: 1px solid #333;
+  }
 
-      input[type="file"],
-      select,
-      button {
-        border: 1px solid var(--border);
-        border-radius: 10px;
-        background: #fff;
-        color: var(--text);
-        font-size: 14px;
-        padding: 8px 10px;
-      }
+  .img-wrap {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    cursor: pointer;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-      button {
-        cursor: pointer;
-      }
+  /* backgrounds */
+  .bg-white .img-wrap { background: #ffffff; }
+  .bg-dark  .img-wrap { background: #1a1a2e; }
+  .bg-check .img-wrap {
+    background-image:
+      linear-gradient(45deg, #555 25%, transparent 25%),
+      linear-gradient(-45deg, #555 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #555 75%),
+      linear-gradient(-45deg, transparent 75%, #555 75%);
+    background-size: 16px 16px;
+    background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+    background-color: #333;
+  }
 
-      .status {
-        margin-top: 10px;
-        color: var(--muted);
-        font-size: 13px;
-      }
+  .img-wrap img {
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    display: block;
+  }
 
-      .grid {
-        margin-top: 14px;
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-        gap: 10px;
-      }
+  /* version badge */
+  .badge {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: rgba(0,0,0,0.65);
+    backdrop-filter: blur(4px);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 10px;
+    letter-spacing: .04em;
+  }
+  .badge.webp { background: rgba(109,40,217,0.8); }
 
-      .item {
-        background: var(--card);
-        border: 1px solid var(--border);
-        border-radius: 12px;
-        overflow: hidden;
-      }
+  /* tap hint */
+  .tap-hint {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.5);
+    color: #aaa;
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 8px;
+  }
 
-      .stage {
-        height: 210px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border-bottom: 1px solid var(--border);
-        background: repeating-conic-gradient(#d4d4d8 0% 25%, #f4f4f5 0% 50%) 50% / 16px 16px;
-      }
+  /* info bar */
+  .info {
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
 
-      .stage.bg-light {
-        background: #f8fafc;
-      }
+  .filename {
+    font-size: 12px;
+    color: #aaa;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
 
-      .stage.bg-dark {
-        background: #111827;
-      }
+  .sizes {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
 
-      .stage.bg-sky {
-        background: linear-gradient(180deg, #86c5ff 0%, #d7ecff 62%, #e6e6e6 100%);
-      }
+  .size-tag {
+    font-size: 11px;
+    padding: 3px 8px;
+    border-radius: 8px;
+    border: 1px solid #444;
+    color: #bbb;
+    cursor: pointer;
+    transition: all .15s;
+    white-space: nowrap;
+  }
+  .size-tag:active { transform: scale(0.95); }
+  .size-tag.selected { border-color: #a78bfa; background: #a78bfa22; color: #c4b5fd; }
+  .size-tag .label { font-weight: 700; }
+  .size-tag .kb { color: #777; margin-left: 3px; }
+  .size-tag.selected .kb { color: #9d88e0; }
+  .size-tag.best-ratio { border-color: #34d399; }
+  .size-tag.best-ratio .kb { color: #6ee7b7; }
 
-      .stage img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-        transition: transform 0.18s ease;
-      }
+  /* loading */
+  .loading {
+    padding: 8px 12px;
+    font-size: 11px;
+    color: #666;
+  }
 
-      .meta {
-        padding: 10px;
-      }
+  /* summary bar */
+  .summary {
+    text-align: center;
+    padding: 12px 16px 0;
+    color: #666;
+    font-size: 12px;
+  }
+  .summary strong { color: #a78bfa; }
+</style>
+</head>
+<body>
 
-      .name {
-        font-size: 13px;
-        font-weight: 600;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-      }
+<div class="header">
+  <h1>🖼 PNG vs WebP</h1>
+  <div class="controls">
+    <span style="font-size:11px;color:#666">背景：</span>
+    <button class="btn" id="btnWhite" onclick="setBg('white')">白底</button>
+    <button class="btn active" id="btnDark"  onclick="setBg('dark')">黑底</button>
+    <button class="btn" id="btnCheck" onclick="setBg('check')">棋盤格</button>
+    <label class="upload-btn">＋ 選圖 <input type="file" id="fileInput" accept="image/png,image/webp" multiple></label>
+  </div>
+</div>
 
-      .sub {
-        margin-top: 4px;
-        font-size: 12px;
-        color: var(--muted);
-      }
-    </style>
-  </head>
-  <body>
-    <main class="page">
-      <section class="panel">
-        <h1>WebP 透明圖快速檢查</h1>
-        <p class="hint">
-          上傳你要測試的圖（WebP/PNG 都可），切背景看邊緣是否有白邊、黑邊、糊邊。
-        </p>
-        <div class="controls">
-          <div>
-            <label for="fileInput">選擇圖片（可多選）</label>
-            <input id="fileInput" type="file" accept="image/*" multiple />
-          </div>
-          <div>
-            <label for="bgMode">預覽背景</label>
-            <select id="bgMode">
-              <option value="checker">棋盤格（透明檢查）</option>
-              <option value="light">淺色</option>
-              <option value="dark">深色</option>
-              <option value="sky">天空漸層（對話頁感）</option>
-            </select>
-          </div>
-          <div>
-            <label for="scale">縮放：<span id="scaleValue">100%</span></label>
-            <input id="scale" type="range" min="50" max="220" step="5" value="100" />
-          </div>
-          <div>
-            <label>&nbsp;</label>
-            <button id="clearBtn" type="button">清空預覽</button>
-          </div>
-        </div>
-        <div id="status" class="status">尚未上傳圖片</div>
-      </section>
-      <section id="grid" class="grid"></section>
-    </main>
+<input type="file" id="fileInput" accept="image/png,image/webp" multiple style="display:none">
 
-    <script>
-      const fileInput = document.getElementById('fileInput');
-      const bgMode = document.getElementById('bgMode');
-      const scale = document.getElementById('scale');
-      const scaleValue = document.getElementById('scaleValue');
-      const clearBtn = document.getElementById('clearBtn');
-      const status = document.getElementById('status');
-      const grid = document.getElementById('grid');
+<div id="uploadZone" class="upload-zone" onclick="document.getElementById('fileInput').click()">
+  <div class="icon">🗂</div>
+  <p><strong>點這裡選 PNG 圖片</strong>（可多選）<br>頁面會自動轉換成 WebP 各品質<br>讓你對比差別</p>
+</div>
 
-      let urls = [];
+<div id="summary" class="summary" style="display:none"></div>
+<div id="grid" class="grid"></div>
 
-      const kb = (bytes) => `${(bytes / 1024).toFixed(1)} KB`;
+<script>
+let currentBg = 'dark';
 
-      const createCard = (file, src) =>
-        new Promise((resolve) => {
-          const img = new Image();
-          img.onload = () => {
-            const item = document.createElement('article');
-            item.className = 'item';
-            const stage = document.createElement('div');
-            stage.className = 'stage';
-            const shown = document.createElement('img');
-            shown.src = src;
-            shown.alt = file.name;
-            shown.style.transform = `scale(${Number(scale.value) / 100})`;
-            stage.appendChild(shown);
-            item.appendChild(stage);
+function setBg(bg) {
+  currentBg = bg;
+  ['white','dark','check'].forEach(b => {
+    document.getElementById('btn'+b.charAt(0).toUpperCase()+b.slice(1)).classList.toggle('active', b===bg);
+  });
+  document.querySelectorAll('.img-wrap').forEach(el => {
+    el.className = 'img-wrap bg-' + bg;
+  });
+}
 
-            const meta = document.createElement('div');
-            meta.className = 'meta';
-            meta.innerHTML = `
-              <div class="name" title="${file.name}">${file.name}</div>
-              <div class="sub">${img.naturalWidth} x ${img.naturalHeight}</div>
-              <div class="sub">${kb(file.size)}</div>
-            `;
-            item.appendChild(meta);
-            resolve(item);
-          };
-          img.src = src;
-        });
+// File input
+document.getElementById('fileInput').addEventListener('change', e => {
+  const files = Array.from(e.target.files).filter(f => f.type === 'image/png' || f.type === 'image/webp');
+  if (!files.length) return;
+  document.getElementById('uploadZone').style.display = 'none';
+  document.getElementById('summary').style.display = 'block';
+  files.forEach(processFile);
+  e.target.value = '';
+});
 
-      const applyBackground = () => {
-        const mode = bgMode.value;
-        document.querySelectorAll('.stage').forEach((stage) => {
-          stage.className = `stage${mode === 'checker' ? '' : ` bg-${mode}`}`;
-        });
-      };
+// Also handle drop on upload zone
+const zone = document.getElementById('uploadZone');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor='#a78bfa'; });
+zone.addEventListener('dragleave', () => { zone.style.borderColor=''; });
+zone.addEventListener('drop', e => {
+  e.preventDefault();
+  zone.style.borderColor = '';
+  const files = Array.from(e.dataTransfer.files).filter(f => f.type === 'image/png' || f.type === 'image/webp');
+  if (!files.length) return;
+  zone.style.display = 'none';
+  document.getElementById('summary').style.display = 'block';
+  files.forEach(processFile);
+});
 
-      const applyScale = () => {
-        const value = Number(scale.value);
-        scaleValue.textContent = `${value}%`;
-        document.querySelectorAll('.stage img').forEach((img) => {
-          img.style.transform = `scale(${value / 100})`;
-        });
-      };
+const QUALITIES = [
+  { label: 'Q95', q: 0.95 },
+  { label: 'Q85', q: 0.85 },
+  { label: 'Q75', q: 0.75 },
+  { label: 'Q60', q: 0.60 },
+];
 
-      const clearAll = () => {
-        urls.forEach((url) => URL.revokeObjectURL(url));
-        urls = [];
-        grid.innerHTML = '';
-        fileInput.value = '';
-        status.textContent = '尚未上傳圖片';
-      };
+function fmtKB(bytes) {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024*1024) return (bytes/1024).toFixed(1) + ' KB';
+  return (bytes/1024/1024).toFixed(2) + ' MB';
+}
 
-      fileInput.addEventListener('change', async (event) => {
-        clearAll();
-        const files = Array.from(event.target.files || []).filter((f) => f.type.startsWith('image/'));
-        if (!files.length) {
-          status.textContent = '沒有可預覽的圖片';
-          return;
-        }
-        status.textContent = `載入中... (${files.length} 張)`;
-        const cards = await Promise.all(
-          files
-            .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
-            .map((file) => {
-              const src = URL.createObjectURL(file);
-              urls.push(src);
-              return createCard(file, src);
-            }),
-        );
-        cards.forEach((card) => grid.appendChild(card));
-        applyBackground();
-        applyScale();
-        status.textContent = `已載入 ${files.length} 張`;
+function processFile(file) {
+  const isPng = file.type === 'image/png';
+  const grid = document.getElementById('grid');
+
+  const card = document.createElement('div');
+  card.className = 'card';
+  card.innerHTML = `
+    <div class="img-wrap bg-${currentBg}">
+      <img id="img-${Date.now()}" alt="">
+      <span class="badge">${isPng ? 'PNG' : 'WebP'}</span>
+      <span class="tap-hint">點擊切換版本</span>
+    </div>
+    <div class="info">
+      <div class="filename">${file.name}</div>
+      <div class="loading">轉換中…</div>
+      <div class="sizes" style="display:none"></div>
+    </div>
+  `;
+  grid.prepend(card);
+
+  const imgEl = card.querySelector('img');
+  const badge = card.querySelector('.badge');
+  const sizesEl = card.querySelector('.sizes');
+  const loadingEl = card.querySelector('.loading');
+
+  const url = URL.createObjectURL(file);
+  const image = new Image();
+  image.onload = () => {
+    // Draw to canvas
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(image, 0, 0);
+
+    // Build versions
+    const versions = [];
+
+    // Original PNG (or WebP)
+    versions.push({
+      label: isPng ? 'PNG' : 'WebP原',
+      dataUrl: url,
+      size: file.size,
+      isWebp: !isPng,
+    });
+
+    // Convert to WebP at each quality
+    const pending = QUALITIES.map(q => new Promise(resolve => {
+      canvas.toBlob(blob => {
+        if (!blob) { resolve(null); return; }
+        const du = URL.createObjectURL(blob);
+        resolve({ label: q.label, dataUrl: du, size: blob.size, isWebp: true });
+      }, 'image/webp', q.q);
+    }));
+
+    Promise.all(pending).then(results => {
+      results.forEach(r => r && versions.push(r));
+
+      // Find best ratio (smallest WebP)
+      const webpVersions = versions.filter(v => v.isWebp && v.label !== 'WebP原');
+      const minSize = webpVersions.length ? Math.min(...webpVersions.map(v=>v.size)) : Infinity;
+
+      // Render size tags
+      loadingEl.style.display = 'none';
+      sizesEl.style.display = 'flex';
+
+      versions.forEach((v, i) => {
+        const tag = document.createElement('div');
+        tag.className = 'size-tag' + (i===0?' selected':'') + (v.size===minSize&&v.isWebp?' best-ratio':'');
+        tag.innerHTML = `<span class="label">${v.label}</span><span class="kb">${fmtKB(v.size)}</span>`;
+        tag.onclick = () => switchTo(i);
+        sizesEl.appendChild(tag);
       });
 
-      bgMode.addEventListener('change', applyBackground);
-      scale.addEventListener('input', applyScale);
-      clearBtn.addEventListener('click', clearAll);
-    </script>
-  </body>
+      let current = 0;
+      imgEl.src = versions[0].dataUrl;
+
+      function switchTo(i) {
+        current = i;
+        const v = versions[i];
+        imgEl.src = v.dataUrl;
+        badge.textContent = v.label;
+        badge.className = 'badge' + (v.isWebp ? ' webp' : '');
+        sizesEl.querySelectorAll('.size-tag').forEach((t,j) => t.classList.toggle('selected', j===i));
+      }
+
+      // Click image cycles through versions
+      card.querySelector('.img-wrap').onclick = () => {
+        switchTo((current + 1) % versions.length);
+      };
+
+      updateSummary();
+    });
+  };
+  image.src = url;
+}
+
+function updateSummary() {
+  const count = document.querySelectorAll('.card').length;
+  document.getElementById('summary').innerHTML =
+    `已載入 <strong>${count}</strong> 張圖 ·  <span style="color:#666">點圖片切換版本，點標籤直接跳</span>`;
+}
+</script>
+</body>
 </html>
