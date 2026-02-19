@@ -14,7 +14,6 @@
     min-height: 100vh;
   }
 
-  /* ── Header ── */
   .header {
     position: sticky;
     top: 0;
@@ -27,9 +26,7 @@
     gap: 10px;
     align-items: center;
   }
-
   .header h1 { font-size: 15px; font-weight: 700; color: #fff; white-space: nowrap; }
-
   .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; flex: 1; }
 
   .btn {
@@ -55,25 +52,29 @@
     font-size: 12px;
     cursor: pointer;
     white-space: nowrap;
+    display: inline-block;
+  }
+  .upload-btn.webp-btn {
+    border-color: #0d9488;
+    background: #0d948822;
+    color: #5eead4;
   }
 
-  /* ── Upload zone ── */
   .upload-zone {
-    margin: 40px auto;
+    margin: 32px auto;
     max-width: 480px;
     border: 2px dashed #444;
     border-radius: 20px;
-    padding: 48px 24px;
+    padding: 40px 24px;
     text-align: center;
     cursor: pointer;
     transition: border-color .2s;
   }
   .upload-zone:hover { border-color: #a78bfa; }
   .upload-zone .icon { font-size: 48px; margin-bottom: 12px; }
-  .upload-zone p { color: #888; font-size: 14px; line-height: 1.6; }
+  .upload-zone p { color: #888; font-size: 14px; line-height: 1.8; }
   .upload-zone strong { color: #c4b5fd; }
 
-  /* ── Grid ── */
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -81,10 +82,8 @@
     padding: 16px;
   }
 
-  /* ── Card ── */
   .card { border-radius: 16px; overflow: hidden; background: #222; border: 1px solid #333; }
 
-  /* ──── THE FIX: class is on img-wrap itself, so use .img-wrap.bg-xxx ──── */
   .img-wrap {
     position: relative;
     width: 100%;
@@ -96,7 +95,6 @@
     justify-content: center;
     transition: background .25s;
   }
-
   .img-wrap.bg-white { background: #ffffff; }
   .img-wrap.bg-dark  { background: #1a1a2e; }
   .img-wrap.bg-check {
@@ -109,34 +107,25 @@
     background-position: 0 0, 0 10px, 10px -10px, -10px 0;
     background-color: #999;
   }
+  .img-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
 
-  .img-wrap img {
-    max-width: 100%;
-    max-height: 100%;
-    object-fit: contain;
-    display: block;
-  }
-
-  /* badge */
   .badge {
     position: absolute;
-    top: 8px;
-    left: 8px;
+    top: 8px; left: 8px;
     background: rgba(0,0,0,0.65);
     backdrop-filter: blur(4px);
     color: #fff;
-    font-size: 11px;
-    font-weight: 700;
+    font-size: 11px; font-weight: 700;
     padding: 3px 8px;
     border-radius: 10px;
     letter-spacing: .04em;
   }
-  .badge.webp { background: rgba(109,40,217,0.8); }
+  .badge.webp  { background: rgba(109,40,217,0.8); }
+  .badge.webp-orig { background: rgba(13,148,136,0.85); }
 
   .tap-hint {
     position: absolute;
-    bottom: 8px;
-    right: 8px;
+    bottom: 8px; right: 8px;
     background: rgba(0,0,0,0.5);
     color: #aaa;
     font-size: 10px;
@@ -144,12 +133,10 @@
     border-radius: 8px;
   }
 
-  /* info */
   .info { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
   .filename { font-size: 12px; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
   .sizes { display: flex; gap: 6px; flex-wrap: wrap; }
-
   .size-tag {
     font-size: 11px;
     padding: 3px 8px;
@@ -162,6 +149,7 @@
   }
   .size-tag:active { transform: scale(0.95); }
   .size-tag.selected { border-color: #a78bfa; background: #a78bfa22; color: #c4b5fd; }
+  .size-tag.selected.is-teal { border-color: #5eead4; background: #0d948822; color: #5eead4; }
   .size-tag .label { font-weight: 700; }
   .size-tag .kb { color: #777; margin-left: 3px; }
   .size-tag.selected .kb { color: #9d88e0; }
@@ -169,14 +157,36 @@
   .size-tag.smallest .kb { color: #6ee7b7; }
 
   .loading { padding: 4px 0; font-size: 11px; color: #666; }
+  .ratio { font-size: 11px; color: #555; }
+  .ratio span { color: #34d399; }
 
-  /* summary */
   .summary { text-align: center; padding: 12px 16px 0; color: #666; font-size: 12px; }
   .summary strong { color: #a78bfa; }
 
-  /* dim ratio */
-  .ratio { font-size: 11px; color: #555; }
-  .ratio span { color: #34d399; }
+  /* divider between PNG and WebP upload areas */
+  .upload-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    max-width: 640px;
+    margin: 32px auto 0;
+    padding: 0 16px;
+  }
+  .upload-half {
+    border: 2px dashed #444;
+    border-radius: 16px;
+    padding: 28px 16px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color .2s;
+  }
+  .upload-half:hover { border-color: #a78bfa; }
+  .upload-half.teal:hover { border-color: #5eead4; }
+  .upload-half .icon { font-size: 32px; margin-bottom: 8px; }
+  .upload-half p { color: #888; font-size: 12px; line-height: 1.6; }
+  .upload-half strong { color: #c4b5fd; }
+  .upload-half.teal strong { color: #5eead4; }
+  .upload-hint { text-align: center; color: #555; font-size: 11px; margin-top: 8px; padding-bottom: 4px; }
 </style>
 </head>
 <body>
@@ -188,17 +198,30 @@
     <button class="btn" id="btnWhite" onclick="setBg('white')">⬜ 白底</button>
     <button class="btn active" id="btnDark"  onclick="setBg('dark')">⬛ 黑底</button>
     <button class="btn" id="btnCheck" onclick="setBg('check')">🔲 棋盤格</button>
-    <label class="upload-btn">＋ 選 PNG
-      <input type="file" id="fileInput" accept="image/png" multiple style="display:none">
+    <label class="upload-btn">
+      ＋ PNG
+      <input type="file" id="pngInput" accept="image/png" multiple style="display:none">
+    </label>
+    <label class="upload-btn webp-btn">
+      ＋ WebP
+      <input type="file" id="webpInput" accept="image/webp" multiple style="display:none">
     </label>
   </div>
 </div>
 
-<div id="uploadZone" class="upload-zone" onclick="document.getElementById('fileInput').click()">
-  <div class="icon">🗂</div>
-  <p><strong>點這裡選 PNG 圖片</strong>（可多選）<br><br>
-  頁面會自動轉出 Q95 / Q85 / Q75 / Q60 四個 WebP 版本<br>
-  點圖片切換版本，棋盤格背景可測試透明底</p>
+<!-- Initial upload zone (only before any files loaded) -->
+<div id="uploadArea">
+  <div class="upload-row">
+    <div class="upload-half" onclick="document.getElementById('pngInput').click()">
+      <div class="icon">🗂</div>
+      <p><strong>上傳 PNG</strong><br>自動轉出多品質 WebP 對比</p>
+    </div>
+    <div class="upload-half teal" onclick="document.getElementById('webpInput').click()">
+      <div class="icon">🖼</div>
+      <p><strong>上傳 WebP</strong><br>直接看原始 WebP 長怎樣</p>
+    </div>
+  </div>
+  <p class="upload-hint">也可以直接把圖片拖進來</p>
 </div>
 
 <div id="summary" class="summary" style="display:none"></div>
@@ -206,42 +229,45 @@
 
 <script>
 let currentBg = 'dark';
+let totalCards = 0;
 
 function setBg(bg) {
   currentBg = bg;
-  // update button active state
   ['white','dark','check'].forEach(b => {
-    const id = 'btn' + b[0].toUpperCase() + b.slice(1);
-    document.getElementById(id).classList.toggle('active', b === bg);
+    document.getElementById('btn' + b[0].toUpperCase() + b.slice(1))
+      .classList.toggle('active', b === bg);
   });
-  // update ALL existing img-wrap backgrounds
   document.querySelectorAll('.img-wrap').forEach(el => {
     el.className = 'img-wrap bg-' + bg;
   });
 }
 
-document.getElementById('fileInput').addEventListener('change', e => {
-  const files = Array.from(e.target.files);
-  if (!files.length) return;
-  document.getElementById('uploadZone').style.display = 'none';
-  document.getElementById('summary').style.display = 'block';
-  files.forEach(processFile);
+document.getElementById('pngInput').addEventListener('change', e => {
+  handleFiles(Array.from(e.target.files), 'png');
+  e.target.value = '';
+});
+document.getElementById('webpInput').addEventListener('change', e => {
+  handleFiles(Array.from(e.target.files), 'webp');
   e.target.value = '';
 });
 
-// Drag & drop on upload zone
-const zone = document.getElementById('uploadZone');
-zone.addEventListener('dragover', e => { e.preventDefault(); zone.style.borderColor = '#a78bfa'; });
-zone.addEventListener('dragleave', () => { zone.style.borderColor = ''; });
-zone.addEventListener('drop', e => {
+// Drag & drop on body
+document.body.addEventListener('dragover', e => e.preventDefault());
+document.body.addEventListener('drop', e => {
   e.preventDefault();
-  zone.style.borderColor = '';
-  const files = Array.from(e.dataTransfer.files).filter(f => f.type === 'image/png');
-  if (!files.length) return;
-  zone.style.display = 'none';
-  document.getElementById('summary').style.display = 'block';
-  files.forEach(processFile);
+  const files = Array.from(e.dataTransfer.files);
+  const pngs  = files.filter(f => f.type === 'image/png');
+  const webps = files.filter(f => f.type === 'image/webp');
+  if (pngs.length)  handleFiles(pngs,  'png');
+  if (webps.length) handleFiles(webps, 'webp');
 });
+
+function handleFiles(files, type) {
+  if (!files.length) return;
+  document.getElementById('uploadArea').style.display = 'none';
+  document.getElementById('summary').style.display = 'block';
+  files.forEach(f => type === 'png' ? processPng(f) : processWebp(f));
+}
 
 const QUALITIES = [
   { label: 'Q95', q: 0.95 },
@@ -250,115 +276,123 @@ const QUALITIES = [
   { label: 'Q60', q: 0.60 },
 ];
 
-function fmtKB(bytes) {
-  if (bytes < 1024) return bytes + 'B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'KB';
-  return (bytes / 1024 / 1024).toFixed(2) + 'MB';
+function fmtKB(b) {
+  if (b < 1024) return b + 'B';
+  if (b < 1024*1024) return (b/1024).toFixed(1) + 'KB';
+  return (b/1024/1024).toFixed(2) + 'MB';
 }
 
-function pct(orig, now) {
-  return Math.round((1 - now / orig) * 100);
+// ── PNG: auto-convert to WebP variants ──────────────────────────────────────
+function processPng(file) {
+  const uid = makeUid();
+  const card = makeCard(uid, file.name, '轉換中…');
+  document.getElementById('grid').prepend(card);
+
+  const pngUrl = URL.createObjectURL(file);
+  const img = new Image();
+  img.onload = () => {
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    canvas.getContext('2d').drawImage(img, 0, 0);
+
+    const versions = [{ label: 'PNG', dataUrl: pngUrl, size: file.size, isWebp: false }];
+
+    Promise.all(QUALITIES.map(q => new Promise(res => {
+      canvas.toBlob(blob => {
+        if (!blob) return res(null);
+        res({ label: q.label, dataUrl: URL.createObjectURL(blob), size: blob.size, isWebp: true });
+      }, 'image/webp', q.q);
+    }))).then(results => {
+      results.forEach(r => r && versions.push(r));
+      const minWebp = Math.min(...versions.filter(v => v.isWebp).map(v => v.size));
+      const saving  = Math.round((1 - minWebp / file.size) * 100);
+      finishCard(uid, versions, minWebp,
+        saving > 0 ? `最小 WebP 比 PNG 小 <span>${saving}%</span>` : 'WebP 無明顯節省');
+    });
+  };
+  img.src = pngUrl;
 }
 
-function processFile(file) {
-  const grid = document.getElementById('grid');
-  const uid = 'img-' + Date.now() + '-' + Math.random().toString(36).slice(2);
+// ── WebP: display as-is, no conversion ──────────────────────────────────────
+function processWebp(file) {
+  const uid = makeUid();
+  const card = makeCard(uid, file.name, '');
+  document.getElementById('grid').prepend(card);
 
+  const url = URL.createObjectURL(file);
+  const versions = [{ label: 'WebP', dataUrl: url, size: file.size, isWebp: true, isOrig: true }];
+  finishCard(uid, versions, null, `原始 WebP · ${fmtKB(file.size)}`);
+}
+
+// ── Shared card builder ──────────────────────────────────────────────────────
+function makeUid() { return 'u' + Date.now() + Math.random().toString(36).slice(2); }
+
+function makeCard(uid, filename, loadingText) {
   const card = document.createElement('div');
   card.className = 'card';
   card.innerHTML = `
     <div class="img-wrap bg-${currentBg}" id="wrap-${uid}">
-      <img id="${uid}" alt="">
-      <span class="badge" id="badge-${uid}">PNG</span>
+      <img id="img-${uid}" alt="">
+      <span class="badge" id="badge-${uid}">…</span>
       <span class="tap-hint">點擊換版本</span>
     </div>
     <div class="info">
-      <div class="filename">${file.name}</div>
-      <div class="loading" id="loading-${uid}">轉換中…</div>
+      <div class="filename">${filename}</div>
+      <div class="loading" id="load-${uid}">${loadingText}</div>
       <div class="sizes" id="sizes-${uid}" style="display:none"></div>
       <div class="ratio" id="ratio-${uid}"></div>
-    </div>
-  `;
-  grid.prepend(card);
+    </div>`;
+  return card;
+}
 
-  const imgEl    = document.getElementById(uid);
-  const badge    = document.getElementById('badge-' + uid);
-  const sizesEl  = document.getElementById('sizes-' + uid);
-  const loadEl   = document.getElementById('loading-' + uid);
-  const ratioEl  = document.getElementById('ratio-' + uid);
+function finishCard(uid, versions, minWebp, ratioHtml) {
+  const imgEl   = document.getElementById('img-' + uid);
+  const badge   = document.getElementById('badge-' + uid);
+  const loadEl  = document.getElementById('load-' + uid);
+  const sizesEl = document.getElementById('sizes-' + uid);
+  const ratioEl = document.getElementById('ratio-' + uid);
 
-  const pngUrl = URL.createObjectURL(file);
-  imgEl.src = pngUrl;
+  loadEl.style.display  = 'none';
+  sizesEl.style.display = 'flex';
+  ratioEl.innerHTML = ratioHtml;
 
-  const image = new Image();
-  image.onload = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width  = image.naturalWidth;
-    canvas.height = image.naturalHeight;
-    canvas.getContext('2d').drawImage(image, 0, 0);
+  versions.forEach((v, i) => {
+    const tag = document.createElement('div');
+    const isSmall = minWebp !== null && v.isWebp && v.size === minWebp;
+    const isTeal  = v.isOrig;
+    tag.className = 'size-tag' + (i === 0 ? ' selected' + (isTeal ? ' is-teal' : '') : '') + (isSmall ? ' smallest' : '');
+    tag.innerHTML = `<span class="label">${v.label}</span><span class="kb">${fmtKB(v.size)}</span>`;
+    tag.addEventListener('click', () => switchTo(i));
+    sizesEl.appendChild(tag);
+  });
 
-    const versions = [{
-      label: 'PNG', dataUrl: pngUrl, size: file.size, isWebp: false,
-    }];
+  let current = 0;
+  switchTo(0);
 
-    const jobs = QUALITIES.map(q => new Promise(resolve => {
-      canvas.toBlob(blob => {
-        if (!blob) return resolve(null);
-        resolve({ label: q.label, dataUrl: URL.createObjectURL(blob), size: blob.size, isWebp: true });
-      }, 'image/webp', q.q);
-    }));
-
-    Promise.all(jobs).then(results => {
-      results.forEach(r => r && versions.push(r));
-
-      const webpSizes = versions.filter(v => v.isWebp).map(v => v.size);
-      const minWebp   = Math.min(...webpSizes);
-
-      loadEl.style.display  = 'none';
-      sizesEl.style.display = 'flex';
-
-      versions.forEach((v, i) => {
-        const tag = document.createElement('div');
-        const isSmallest = v.isWebp && v.size === minWebp;
-        tag.className = 'size-tag' + (i === 0 ? ' selected' : '') + (isSmallest ? ' smallest' : '');
-        tag.innerHTML = `<span class="label">${v.label}</span><span class="kb">${fmtKB(v.size)}</span>`;
-        tag.addEventListener('click', () => switchTo(i));
-        sizesEl.appendChild(tag);
-      });
-
-      // show best saving
-      const saving = pct(file.size, minWebp);
-      ratioEl.innerHTML = saving > 0
-        ? `最小 WebP 比 PNG 小 <span>${saving}%</span>`
-        : `WebP 沒有節省空間`;
-
-      let current = 0;
-
-      function switchTo(i) {
-        current = i;
-        const v = versions[i];
-        imgEl.src = v.dataUrl;
-        badge.textContent  = v.label;
-        badge.className    = 'badge' + (v.isWebp ? ' webp' : '');
-        sizesEl.querySelectorAll('.size-tag').forEach((t, j) => {
-          t.classList.toggle('selected', j === i);
-        });
-      }
-
-      document.getElementById('wrap-' + uid).addEventListener('click', () => {
-        switchTo((current + 1) % versions.length);
-      });
-
-      updateSummary();
+  function switchTo(i) {
+    current = i;
+    const v = versions[i];
+    imgEl.src = v.dataUrl;
+    badge.textContent = v.label;
+    badge.className = 'badge' + (v.isOrig ? ' webp-orig' : v.isWebp ? ' webp' : '');
+    sizesEl.querySelectorAll('.size-tag').forEach((t, j) => {
+      t.classList.toggle('selected', j === i);
+      if (j === i) t.classList.toggle('is-teal', !!versions[j].isOrig);
     });
-  };
-  image.src = pngUrl;
+  }
+
+  document.getElementById('wrap-' + uid).addEventListener('click', () => {
+    switchTo((current + 1) % versions.length);
+  });
+
+  totalCards++;
+  updateSummary();
 }
 
 function updateSummary() {
-  const n = document.querySelectorAll('.card').length;
   document.getElementById('summary').innerHTML =
-    `已載入 <strong>${n}</strong> 張 · 點圖片循環切換版本 · 點標籤直接跳`;
+    `已載入 <strong>${totalCards}</strong> 張 · 點圖片循環切換版本 · 點標籤直接跳`;
 }
 </script>
 </body>
