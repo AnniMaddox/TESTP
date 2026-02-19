@@ -1,399 +1,303 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>PNG vs WebP 對比</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebP 透明圖快速檢查</title>
+    <style>
+      :root {
+        --bg: #f4f4f5;
+        --text: #111827;
+        --muted: #6b7280;
+        --card: #ffffff;
+        --border: #e5e7eb;
+      }
 
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    background: #1a1a1a;
-    color: #eee;
-    min-height: 100vh;
-  }
+      * {
+        box-sizing: border-box;
+      }
 
-  .header {
-    position: sticky;
-    top: 0;
-    z-index: 100;
-    background: #111;
-    border-bottom: 1px solid #333;
-    padding: 12px 16px;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    align-items: center;
-  }
-  .header h1 { font-size: 15px; font-weight: 700; color: #fff; white-space: nowrap; }
-  .controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; flex: 1; }
+      body {
+        margin: 0;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans TC", sans-serif;
+        background: var(--bg);
+        color: var(--text);
+      }
 
-  .btn {
-    padding: 6px 12px;
-    border-radius: 20px;
-    border: 1.5px solid #444;
-    background: transparent;
-    color: #ccc;
-    font-size: 12px;
-    cursor: pointer;
-    transition: all .15s;
-    white-space: nowrap;
-  }
-  .btn.active { border-color: #a78bfa; background: #a78bfa22; color: #c4b5fd; }
-  .btn:active { transform: scale(0.95); }
+      .page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 16px;
+      }
 
-  .upload-btn {
-    padding: 6px 14px;
-    border-radius: 20px;
-    border: 1.5px solid #6d28d9;
-    background: #6d28d922;
-    color: #c4b5fd;
-    font-size: 12px;
-    cursor: pointer;
-    white-space: nowrap;
-    display: inline-block;
-  }
-  .upload-btn.webp-btn {
-    border-color: #0d9488;
-    background: #0d948822;
-    color: #5eead4;
-  }
+      .panel {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 14px;
+      }
 
-  .upload-zone {
-    margin: 32px auto;
-    max-width: 480px;
-    border: 2px dashed #444;
-    border-radius: 20px;
-    padding: 40px 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color .2s;
-  }
-  .upload-zone:hover { border-color: #a78bfa; }
-  .upload-zone .icon { font-size: 48px; margin-bottom: 12px; }
-  .upload-zone p { color: #888; font-size: 14px; line-height: 1.8; }
-  .upload-zone strong { color: #c4b5fd; }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 20px;
+      }
 
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-    gap: 16px;
-    padding: 16px;
-  }
+      .hint {
+        margin: 0;
+        color: var(--muted);
+        font-size: 13px;
+      }
 
-  .card { border-radius: 16px; overflow: hidden; background: #222; border: 1px solid #333; }
+      .controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+      }
 
-  .img-wrap {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1 / 1;
-    cursor: pointer;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: background .25s;
-  }
-  .img-wrap.bg-white { background: #ffffff; }
-  .img-wrap.bg-dark  { background: #1a1a2e; }
-  .img-wrap.bg-check {
-    background-image:
-      linear-gradient(45deg, #666 25%, transparent 25%),
-      linear-gradient(-45deg, #666 25%, transparent 25%),
-      linear-gradient(45deg, transparent 75%, #666 75%),
-      linear-gradient(-45deg, transparent 75%, #666 75%);
-    background-size: 20px 20px;
-    background-position: 0 0, 0 10px, 10px -10px, -10px 0;
-    background-color: #999;
-  }
-  .img-wrap img { max-width: 100%; max-height: 100%; object-fit: contain; display: block; }
+      label {
+        display: block;
+        font-size: 12px;
+        color: var(--muted);
+        margin-bottom: 6px;
+      }
 
-  .badge {
-    position: absolute;
-    top: 8px; left: 8px;
-    background: rgba(0,0,0,0.65);
-    backdrop-filter: blur(4px);
-    color: #fff;
-    font-size: 11px; font-weight: 700;
-    padding: 3px 8px;
-    border-radius: 10px;
-    letter-spacing: .04em;
-  }
-  .badge.webp  { background: rgba(109,40,217,0.8); }
-  .badge.webp-orig { background: rgba(13,148,136,0.85); }
+      input[type="file"],
+      select,
+      button,
+      input[type="range"] {
+        width: 100%;
+      }
 
-  .tap-hint {
-    position: absolute;
-    bottom: 8px; right: 8px;
-    background: rgba(0,0,0,0.5);
-    color: #aaa;
-    font-size: 10px;
-    padding: 2px 7px;
-    border-radius: 8px;
-  }
+      input[type="file"],
+      select,
+      button {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #fff;
+        color: var(--text);
+        font-size: 14px;
+        padding: 8px 10px;
+      }
 
-  .info { padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
-  .filename { font-size: 12px; color: #aaa; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+      button {
+        cursor: pointer;
+      }
 
-  .sizes { display: flex; gap: 6px; flex-wrap: wrap; }
-  .size-tag {
-    font-size: 11px;
-    padding: 3px 8px;
-    border-radius: 8px;
-    border: 1px solid #444;
-    color: #bbb;
-    cursor: pointer;
-    transition: all .15s;
-    white-space: nowrap;
-  }
-  .size-tag:active { transform: scale(0.95); }
-  .size-tag.selected { border-color: #a78bfa; background: #a78bfa22; color: #c4b5fd; }
-  .size-tag.selected.is-teal { border-color: #5eead4; background: #0d948822; color: #5eead4; }
-  .size-tag .label { font-weight: 700; }
-  .size-tag .kb { color: #777; margin-left: 3px; }
-  .size-tag.selected .kb { color: #9d88e0; }
-  .size-tag.smallest { border-color: #34d399; }
-  .size-tag.smallest .kb { color: #6ee7b7; }
+      .status {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 13px;
+      }
 
-  .loading { padding: 4px 0; font-size: 11px; color: #666; }
-  .ratio { font-size: 11px; color: #555; }
-  .ratio span { color: #34d399; }
+      .grid {
+        margin-top: 14px;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 10px;
+      }
 
-  .summary { text-align: center; padding: 12px 16px 0; color: #666; font-size: 12px; }
-  .summary strong { color: #a78bfa; }
+      .item {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        overflow: hidden;
+      }
 
-  /* divider between PNG and WebP upload areas */
-  .upload-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    max-width: 640px;
-    margin: 32px auto 0;
-    padding: 0 16px;
-  }
-  .upload-half {
-    border: 2px dashed #444;
-    border-radius: 16px;
-    padding: 28px 16px;
-    text-align: center;
-    cursor: pointer;
-    transition: border-color .2s;
-  }
-  .upload-half:hover { border-color: #a78bfa; }
-  .upload-half.teal:hover { border-color: #5eead4; }
-  .upload-half .icon { font-size: 32px; margin-bottom: 8px; }
-  .upload-half p { color: #888; font-size: 12px; line-height: 1.6; }
-  .upload-half strong { color: #c4b5fd; }
-  .upload-half.teal strong { color: #5eead4; }
-  .upload-hint { text-align: center; color: #555; font-size: 11px; margin-top: 8px; padding-bottom: 4px; }
-</style>
-</head>
-<body>
+      .stage {
+        height: 210px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-bottom: 1px solid var(--border);
+        background: repeating-conic-gradient(#d4d4d8 0% 25%, #f4f4f5 0% 50%) 50% / 16px 16px;
+      }
 
-<div class="header">
-  <h1>🖼 PNG vs WebP</h1>
-  <div class="controls">
-    <span style="font-size:11px;color:#666">背景：</span>
-    <button class="btn" id="btnWhite" onclick="setBg('white')">⬜ 白底</button>
-    <button class="btn active" id="btnDark"  onclick="setBg('dark')">⬛ 黑底</button>
-    <button class="btn" id="btnCheck" onclick="setBg('check')">🔲 棋盤格</button>
-    <label class="upload-btn">
-      ＋ PNG
-      <input type="file" id="pngInput" accept="image/png" multiple style="display:none">
-    </label>
-    <label class="upload-btn webp-btn">
-      ＋ WebP
-      <input type="file" id="webpInput" accept="image/webp" multiple style="display:none">
-    </label>
-  </div>
-</div>
+      .stage.bg-light {
+        background: #f8fafc;
+      }
 
-<!-- Initial upload zone (only before any files loaded) -->
-<div id="uploadArea">
-  <div class="upload-row">
-    <div class="upload-half" onclick="document.getElementById('pngInput').click()">
-      <div class="icon">🗂</div>
-      <p><strong>上傳 PNG</strong><br>自動轉出多品質 WebP 對比</p>
-    </div>
-    <div class="upload-half teal" onclick="document.getElementById('webpInput').click()">
-      <div class="icon">🖼</div>
-      <p><strong>上傳 WebP</strong><br>直接看原始 WebP 長怎樣</p>
-    </div>
-  </div>
-  <p class="upload-hint">也可以直接把圖片拖進來</p>
-</div>
+      .stage.bg-dark {
+        background: #111827;
+      }
 
-<div id="summary" class="summary" style="display:none"></div>
-<div id="grid" class="grid"></div>
+      .stage.bg-sky {
+        background: linear-gradient(180deg, #86c5ff 0%, #d7ecff 62%, #e6e6e6 100%);
+      }
 
-<script>
-let currentBg = 'dark';
-let totalCards = 0;
+      .stage img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+        transition: transform 0.18s ease;
+      }
 
-function setBg(bg) {
-  currentBg = bg;
-  ['white','dark','check'].forEach(b => {
-    document.getElementById('btn' + b[0].toUpperCase() + b.slice(1))
-      .classList.toggle('active', b === bg);
-  });
-  document.querySelectorAll('.img-wrap').forEach(el => {
-    el.className = 'img-wrap bg-' + bg;
-  });
-}
+      .meta {
+        padding: 10px;
+      }
 
-document.getElementById('pngInput').addEventListener('change', e => {
-  handleFiles(Array.from(e.target.files), 'png');
-  e.target.value = '';
-});
-document.getElementById('webpInput').addEventListener('change', e => {
-  handleFiles(Array.from(e.target.files), 'webp');
-  e.target.value = '';
-});
+      .name {
+        font-size: 13px;
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
 
-// Drag & drop on body
-document.body.addEventListener('dragover', e => e.preventDefault());
-document.body.addEventListener('drop', e => {
-  e.preventDefault();
-  const files = Array.from(e.dataTransfer.files);
-  const pngs  = files.filter(f => f.type === 'image/png');
-  const webps = files.filter(f => f.type === 'image/webp');
-  if (pngs.length)  handleFiles(pngs,  'png');
-  if (webps.length) handleFiles(webps, 'webp');
-});
+      .sub {
+        margin-top: 4px;
+        font-size: 12px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main class="page">
+      <section class="panel">
+        <h1>WebP 透明圖快速檢查</h1>
+        <p class="hint">
+          上傳你要測試的圖（WebP/PNG 都可），切背景看邊緣是否有白邊、黑邊、糊邊。
+        </p>
+        <div class="controls">
+          <div>
+            <label for="fileInput">選擇圖片（可多選）</label>
+            <input id="fileInput" type="file" accept="image/*" multiple />
+          </div>
+          <div>
+            <label for="bgMode">預覽背景</label>
+            <select id="bgMode">
+              <option value="checker">棋盤格（透明檢查）</option>
+              <option value="light">淺色</option>
+              <option value="dark">深色</option>
+              <option value="sky">天空漸層（對話頁感）</option>
+            </select>
+          </div>
+          <div>
+            <label for="scale">縮放：<span id="scaleValue">100%</span></label>
+            <input id="scale" type="range" min="50" max="220" step="5" value="100" />
+          </div>
+          <div>
+            <label>&nbsp;</label>
+            <button id="clearBtn" type="button">清空預覽</button>
+          </div>
+        </div>
+        <div id="status" class="status">尚未上傳圖片</div>
+      </section>
+      <section id="grid" class="grid"></section>
+    </main>
 
-function handleFiles(files, type) {
-  if (!files.length) return;
-  document.getElementById('uploadArea').style.display = 'none';
-  document.getElementById('summary').style.display = 'block';
-  files.forEach(f => type === 'png' ? processPng(f) : processWebp(f));
-}
+    <script>
+      const fileInput = document.getElementById('fileInput');
+      const bgMode = document.getElementById('bgMode');
+      const scale = document.getElementById('scale');
+      const scaleValue = document.getElementById('scaleValue');
+      const clearBtn = document.getElementById('clearBtn');
+      const status = document.getElementById('status');
+      const grid = document.getElementById('grid');
 
-const QUALITIES = [
-  { label: 'Q95', q: 0.95 },
-  { label: 'Q85', q: 0.85 },
-  { label: 'Q75', q: 0.75 },
-  { label: 'Q60', q: 0.60 },
-];
+      let urls = [];
 
-function fmtKB(b) {
-  if (b < 1024) return b + 'B';
-  if (b < 1024*1024) return (b/1024).toFixed(1) + 'KB';
-  return (b/1024/1024).toFixed(2) + 'MB';
-}
+      const kb = (bytes) => `${(bytes / 1024).toFixed(1)} KB`;
 
-// ── PNG: auto-convert to WebP variants ──────────────────────────────────────
-function processPng(file) {
-  const uid = makeUid();
-  const card = makeCard(uid, file.name, '轉換中…');
-  document.getElementById('grid').prepend(card);
+      const createCard = (file, src) =>
+        new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => {
+            const item = document.createElement('article');
+            item.className = 'item';
+            const stage = document.createElement('div');
+            stage.className = 'stage';
+            const shown = document.createElement('img');
+            shown.src = src;
+            shown.alt = file.name;
+            shown.style.transform = `scale(${Number(scale.value) / 100})`;
+            stage.appendChild(shown);
+            item.appendChild(stage);
 
-  const pngUrl = URL.createObjectURL(file);
-  const img = new Image();
-  img.onload = () => {
-    const canvas = document.createElement('canvas');
-    canvas.width = img.naturalWidth;
-    canvas.height = img.naturalHeight;
-    canvas.getContext('2d').drawImage(img, 0, 0);
+            const meta = document.createElement('div');
+            meta.className = 'meta';
+            meta.innerHTML = `
+              <div class="name" title="${file.name}">${file.name}</div>
+              <div class="sub">${img.naturalWidth} x ${img.naturalHeight}</div>
+              <div class="sub">${kb(file.size)}</div>
+            `;
+            item.appendChild(meta);
+            resolve(item);
+          };
+          img.onerror = () => {
+            const item = document.createElement('article');
+            item.className = 'item';
+            const stage = document.createElement('div');
+            stage.className = 'stage';
+            stage.textContent = '無法預覽';
+            stage.style.color = '#6b7280';
+            stage.style.fontSize = '13px';
+            item.appendChild(stage);
 
-    const versions = [{ label: 'PNG', dataUrl: pngUrl, size: file.size, isWebp: false }];
+            const meta = document.createElement('div');
+            meta.className = 'meta';
+            meta.innerHTML = `
+              <div class="name" title="${file.name}">${file.name}</div>
+              <div class="sub">${kb(file.size)}</div>
+              <div class="sub">格式可能不支援</div>
+            `;
+            item.appendChild(meta);
+            resolve(item);
+          };
+          img.src = src;
+        });
 
-    Promise.all(QUALITIES.map(q => new Promise(res => {
-      canvas.toBlob(blob => {
-        if (!blob) return res(null);
-        res({ label: q.label, dataUrl: URL.createObjectURL(blob), size: blob.size, isWebp: true });
-      }, 'image/webp', q.q);
-    }))).then(results => {
-      results.forEach(r => r && versions.push(r));
-      const minWebp = Math.min(...versions.filter(v => v.isWebp).map(v => v.size));
-      const saving  = Math.round((1 - minWebp / file.size) * 100);
-      finishCard(uid, versions, minWebp,
-        saving > 0 ? `最小 WebP 比 PNG 小 <span>${saving}%</span>` : 'WebP 無明顯節省');
-    });
-  };
-  img.src = pngUrl;
-}
+      const applyBackground = () => {
+        const mode = bgMode.value;
+        document.querySelectorAll('.stage').forEach((stage) => {
+          stage.className = `stage${mode === 'checker' ? '' : ` bg-${mode}`}`;
+        });
+      };
 
-// ── WebP: display as-is, no conversion ──────────────────────────────────────
-function processWebp(file) {
-  const uid = makeUid();
-  const card = makeCard(uid, file.name, '');
-  document.getElementById('grid').prepend(card);
+      const applyScale = () => {
+        const value = Number(scale.value);
+        scaleValue.textContent = `${value}%`;
+        document.querySelectorAll('.stage img').forEach((img) => {
+          img.style.transform = `scale(${value / 100})`;
+        });
+      };
 
-  const url = URL.createObjectURL(file);
-  const versions = [{ label: 'WebP', dataUrl: url, size: file.size, isWebp: true, isOrig: true }];
-  finishCard(uid, versions, null, `原始 WebP · ${fmtKB(file.size)}`);
-}
+      const clearAll = (resetInput = true) => {
+        urls.forEach((url) => URL.revokeObjectURL(url));
+        urls = [];
+        grid.innerHTML = '';
+        if (resetInput) {
+          fileInput.value = '';
+        }
+        status.textContent = '尚未上傳圖片';
+      };
 
-// ── Shared card builder ──────────────────────────────────────────────────────
-function makeUid() { return 'u' + Date.now() + Math.random().toString(36).slice(2); }
+      fileInput.addEventListener('change', async (event) => {
+        const files = Array.from(event.target.files || []).filter((f) => f.type.startsWith('image/'));
+        clearAll(false);
+        if (!files.length) {
+          status.textContent = '沒有可預覽的圖片';
+          return;
+        }
+        status.textContent = `載入中... (${files.length} 張)`;
+        const cards = await Promise.all(
+          files
+            .sort((a, b) => a.name.localeCompare(b.name, undefined, { numeric: true }))
+            .map((file) => {
+              const src = URL.createObjectURL(file);
+              urls.push(src);
+              return createCard(file, src);
+            }),
+        );
+        cards.forEach((card) => grid.appendChild(card));
+        applyBackground();
+        applyScale();
+        status.textContent = `已載入 ${files.length} 張`;
+      });
 
-function makeCard(uid, filename, loadingText) {
-  const card = document.createElement('div');
-  card.className = 'card';
-  card.innerHTML = `
-    <div class="img-wrap bg-${currentBg}" id="wrap-${uid}">
-      <img id="img-${uid}" alt="">
-      <span class="badge" id="badge-${uid}">…</span>
-      <span class="tap-hint">點擊換版本</span>
-    </div>
-    <div class="info">
-      <div class="filename">${filename}</div>
-      <div class="loading" id="load-${uid}">${loadingText}</div>
-      <div class="sizes" id="sizes-${uid}" style="display:none"></div>
-      <div class="ratio" id="ratio-${uid}"></div>
-    </div>`;
-  return card;
-}
-
-function finishCard(uid, versions, minWebp, ratioHtml) {
-  const imgEl   = document.getElementById('img-' + uid);
-  const badge   = document.getElementById('badge-' + uid);
-  const loadEl  = document.getElementById('load-' + uid);
-  const sizesEl = document.getElementById('sizes-' + uid);
-  const ratioEl = document.getElementById('ratio-' + uid);
-
-  loadEl.style.display  = 'none';
-  sizesEl.style.display = 'flex';
-  ratioEl.innerHTML = ratioHtml;
-
-  versions.forEach((v, i) => {
-    const tag = document.createElement('div');
-    const isSmall = minWebp !== null && v.isWebp && v.size === minWebp;
-    const isTeal  = v.isOrig;
-    tag.className = 'size-tag' + (i === 0 ? ' selected' + (isTeal ? ' is-teal' : '') : '') + (isSmall ? ' smallest' : '');
-    tag.innerHTML = `<span class="label">${v.label}</span><span class="kb">${fmtKB(v.size)}</span>`;
-    tag.addEventListener('click', () => switchTo(i));
-    sizesEl.appendChild(tag);
-  });
-
-  let current = 0;
-  switchTo(0);
-
-  function switchTo(i) {
-    current = i;
-    const v = versions[i];
-    imgEl.src = v.dataUrl;
-    badge.textContent = v.label;
-    badge.className = 'badge' + (v.isOrig ? ' webp-orig' : v.isWebp ? ' webp' : '');
-    sizesEl.querySelectorAll('.size-tag').forEach((t, j) => {
-      t.classList.toggle('selected', j === i);
-      if (j === i) t.classList.toggle('is-teal', !!versions[j].isOrig);
-    });
-  }
-
-  document.getElementById('wrap-' + uid).addEventListener('click', () => {
-    switchTo((current + 1) % versions.length);
-  });
-
-  totalCards++;
-  updateSummary();
-}
-
-function updateSummary() {
-  document.getElementById('summary').innerHTML =
-    `已載入 <strong>${totalCards}</strong> 張 · 點圖片循環切換版本 · 點標籤直接跳`;
-}
-</script>
-</body>
+      bgMode.addEventListener('change', applyBackground);
+      scale.addEventListener('input', applyScale);
+      clearBtn.addEventListener('click', clearAll);
+    </script>
+  </body>
 </html>
