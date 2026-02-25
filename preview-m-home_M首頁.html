@@ -1,0 +1,626 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>M 的家</title>
+<style>
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body {
+  width:100%; height:100%; overflow:hidden;
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',sans-serif;
+  background:#060a14;
+  user-select:none;
+}
+
+/* ── WALLPAPER ── */
+.wallpaper {
+  position:fixed; inset:0; z-index:0;
+  background:
+    radial-gradient(ellipse at 25% 70%, rgba(55,10,105,.55) 0%,transparent 52%),
+    radial-gradient(ellipse at 75% 20%, rgba(10,30,90,.65)  0%,transparent 55%),
+    radial-gradient(ellipse at 50% 48%, rgba(8,18,52,.40)   0%,transparent 70%),
+    linear-gradient(175deg, #080c1c 0%, #0b1028 42%, #080c1c 100%);
+}
+.stars-layer { position:fixed; inset:0; z-index:1; pointer-events:none; }
+.star { position:absolute; border-radius:50%; }
+@keyframes tw1 { 0%,100%{opacity:.08} 50%{opacity:.80} }
+@keyframes tw2 { 0%,100%{opacity:.18} 50%{opacity:1} }
+@keyframes tw3 { 0%,100%{opacity:.04} 50%{opacity:.50} }
+
+/* ── STATUS BAR ── */
+.status-bar {
+  position:fixed; top:0; left:0; right:0;
+  height:48px; z-index:50;
+  display:flex; align-items:flex-end; justify-content:space-between;
+  padding:0 22px 6px;
+  pointer-events:none;
+}
+.sb-time { font-size:15px; font-weight:600; color:rgba(255,255,255,.92); letter-spacing:.3px; }
+.sb-icons { display:flex; align-items:center; gap:6px; }
+.sb-signal { display:flex; align-items:flex-end; gap:1.5px; }
+.sb-signal span { width:3px; border-radius:1px; background:rgba(255,255,255,.88); }
+.sb-signal span:nth-child(1){ height:4px; }
+.sb-signal span:nth-child(2){ height:7px; }
+.sb-signal span:nth-child(3){ height:10px; }
+.sb-wifi { width:14px; height:11px; position:relative; }
+.sb-wifi::before,.sb-wifi::after,.sb-wifi i {
+  content:''; position:absolute; border:2px solid rgba(255,255,255,.88);
+  border-bottom:none; border-radius:50% 50% 0 0;
+}
+.sb-wifi::before { width:14px; height:9px; top:0; left:0; }
+.sb-wifi::after  { width:9px;  height:6px; top:3px; left:2.5px; }
+.sb-wifi i       { width:4px;  height:3.5px; top:6.5px; left:5px; border-width:1.8px; }
+.sb-wifi i::after { content:''; position:absolute; width:3px; height:3px; border-radius:50%;
+  background:rgba(255,255,255,.88); bottom:-5px; left:-.3px; }
+.sb-battery {
+  width:22px; height:12px; border:1.5px solid rgba(255,255,255,.75); border-radius:3px;
+  position:relative;
+}
+.sb-battery::before {
+  content:''; position:absolute; right:-5px; top:3px; width:3px; height:6px;
+  background:rgba(255,255,255,.65); border-radius:0 1px 1px 0;
+}
+.sb-battery::after {
+  content:''; position:absolute; inset:2px;
+  width:80%; background:rgba(255,255,255,.88); border-radius:1px;
+}
+
+/* ── SCREENS ── */
+.screen {
+  position:fixed; inset:0; z-index:10;
+  display:flex; flex-direction:column;
+  transition:transform .44s cubic-bezier(.4,0,.2,1), opacity .4s ease;
+}
+.screen.hidden { pointer-events:none; opacity:0; }
+.screen.exit-up { transform:translateY(-100%); opacity:0; }
+.screen.enter-from-below { transform:translateY(8%) scale(.96); opacity:0; }
+.screen.enter-from-below.active { transform:translateY(0) scale(1); opacity:1; }
+
+/* ── FROSTED CARD ── */
+.glass {
+  background:rgba(255,255,255,.08);
+  backdrop-filter:blur(22px) saturate(160%);
+  -webkit-backdrop-filter:blur(22px) saturate(160%);
+  border:1px solid rgba(255,255,255,.13);
+  border-radius:18px;
+}
+
+/* ═══════════════════════════
+   ① LOCK SCREEN
+═══════════════════════════ */
+#lockScreen { justify-content:space-between; padding-top:52px; }
+
+.lock-clock {
+  text-align:center; padding:20px 0 12px;
+}
+.lock-time {
+  font-size:min(90px,22vw); font-weight:100; color:#fff;
+  letter-spacing:-3px; line-height:1;
+}
+.lock-date {
+  font-size:17px; font-weight:400; color:rgba(255,255,255,.80);
+  letter-spacing:.5px; margin-top:6px;
+}
+
+.lock-notifs {
+  flex:1; display:flex; flex-direction:column; gap:10px;
+  padding:10px 20px 0; overflow:hidden;
+}
+.notif-card {
+  display:flex; align-items:center; gap:12px;
+  padding:12px 14px; border-radius:16px;
+  cursor:pointer;
+  transition:transform .18s ease, opacity .18s;
+  animation:notifIn .5s ease both;
+}
+.notif-card:active { transform:scale(.97); opacity:.85; }
+@keyframes notifIn {
+  from { transform:translateY(20px); opacity:0; }
+  to   { transform:translateY(0);    opacity:1; }
+}
+.notif-card:nth-child(2){ animation-delay:.08s; }
+.notif-card:nth-child(3){ animation-delay:.16s; }
+
+.notif-ico {
+  width:38px; height:38px; border-radius:10px;
+  flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  font-size:17px; font-weight:700; color:rgba(255,255,255,.92);
+  letter-spacing:0;
+}
+.notif-body { flex:1; min-width:0; }
+.notif-app  { font-size:12px; font-weight:600; color:rgba(255,255,255,.60); margin-bottom:2px; }
+.notif-text { font-size:14px; color:rgba(255,255,255,.88); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.notif-when { font-size:12px; color:rgba(255,255,255,.45); flex-shrink:0; }
+
+.lock-bottom {
+  padding:16px 0 calc(env(safe-area-inset-bottom) + 16px);
+  display:flex; flex-direction:column; align-items:center; gap:8px;
+}
+.home-indicator {
+  width:130px; height:5px; border-radius:3px;
+  background:rgba(255,255,255,.22);
+}
+.swipe-hint {
+  font-size:12px; color:rgba(255,255,255,.40); letter-spacing:2px;
+  animation:hintPulse 2.8s ease-in-out infinite;
+}
+@keyframes hintPulse { 0%,100%{opacity:.40} 50%{opacity:.80} }
+
+/* ═══════════════════════════
+   ② NOTIFICATION CENTER
+═══════════════════════════ */
+#notifScreen {
+  padding-top:52px;
+  justify-content:flex-start;
+}
+.nc-header {
+  text-align:center; padding:16px 20px 12px;
+}
+.nc-title {
+  font-size:16px; font-weight:500; color:rgba(255,255,255,.55);
+  letter-spacing:3px;
+}
+.nc-time {
+  font-size:min(56px,13vw); font-weight:100; color:#fff;
+  letter-spacing:-2px; line-height:1.1; margin-top:2px;
+}
+
+.nc-list {
+  flex:1; overflow-y:auto; padding:4px 16px 12px;
+  display:flex; flex-direction:column; gap:9px;
+  -webkit-overflow-scrolling:touch;
+}
+.nc-card {
+  display:flex; align-items:center; gap:14px;
+  padding:14px 16px; border-radius:18px;
+  cursor:pointer;
+  transition:transform .18s, opacity .18s;
+  animation:notifIn .4s ease both;
+}
+.nc-card:nth-child(2){ animation-delay:.05s; }
+.nc-card:nth-child(3){ animation-delay:.10s; }
+.nc-card:nth-child(4){ animation-delay:.15s; }
+.nc-card:nth-child(5){ animation-delay:.20s; }
+.nc-card:nth-child(6){ animation-delay:.25s; }
+.nc-card:active { transform:scale(.97); opacity:.85; }
+.nc-ico {
+  width:44px; height:44px; border-radius:12px;
+  flex-shrink:0; display:flex; align-items:center; justify-content:center;
+  font-size:19px; font-weight:700; color:rgba(255,255,255,.92);
+}
+.nc-body    { flex:1; min-width:0; }
+.nc-app     { font-size:12px; font-weight:600; color:rgba(255,255,255,.55); margin-bottom:2px; }
+.nc-preview { font-size:14px; color:rgba(255,255,255,.85); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.nc-sub     { font-size:12px; color:rgba(255,255,255,.45); margin-top:1px; }
+.nc-when    { font-size:12px; color:rgba(255,255,255,.40); flex-shrink:0; align-self:flex-start; margin-top:2px; }
+
+.nc-bottom {
+  padding:10px 20px calc(env(safe-area-inset-bottom) + 14px);
+  display:flex; justify-content:center;
+}
+.nc-go-home {
+  display:flex; align-items:center; gap:8px;
+  padding:14px 36px; border-radius:30px;
+  font-size:15px; font-weight:500; color:rgba(255,255,255,.90);
+  letter-spacing:.5px; cursor:pointer;
+  transition:transform .18s, opacity .18s;
+  background:rgba(255,255,255,.11);
+  border:1px solid rgba(255,255,255,.16);
+}
+.nc-go-home:active { transform:scale(.96); opacity:.80; }
+.nc-go-home-arr { font-size:20px; }
+
+/* ═══════════════════════════
+   ③ HOME SCREEN
+═══════════════════════════ */
+#homeScreen { padding-top:52px; justify-content:space-between; }
+
+.home-top { padding:14px 24px 6px; display:flex; justify-content:flex-end; }
+.home-lock-btn {
+  font-size:12px; color:rgba(255,255,255,.35); cursor:pointer; letter-spacing:1.5px;
+  padding:4px 10px; border-radius:10px;
+  transition:color .2s;
+}
+.home-lock-btn:hover { color:rgba(255,255,255,.65); }
+
+.app-grid {
+  flex:1; display:flex; flex-direction:column;
+  justify-content:center;
+  padding:0 20px; gap:0;
+}
+.app-row { display:flex; justify-content:center; gap:18px; margin-bottom:24px; }
+.app-row:last-child { margin-bottom:0; }
+
+.app-item {
+  display:flex; flex-direction:column; align-items:center; gap:7px;
+  cursor:pointer;
+}
+.app-icon {
+  width:min(72px,17vw); height:min(72px,17vw);
+  border-radius:22.4%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:min(26px,6.5vw); font-weight:700;
+  color:rgba(255,255,255,.95);
+  box-shadow:0 4px 16px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.15);
+  transition:transform .15s cubic-bezier(.34,1.56,.64,1);
+  position:relative; overflow:hidden;
+}
+.app-icon::after {
+  content:''; position:absolute; inset:0; border-radius:inherit;
+  background:linear-gradient(180deg,rgba(255,255,255,.14) 0%,transparent 60%);
+  pointer-events:none;
+}
+.app-item:active .app-icon { transform:scale(.88); }
+.app-label {
+  font-size:11px; color:rgba(255,255,255,.85);
+  text-shadow:0 1px 4px rgba(0,0,0,.5);
+  letter-spacing:.3px;
+}
+
+/* page dots */
+.page-dots { display:flex; justify-content:center; gap:6px; padding:12px 0; }
+.page-dot  { width:7px; height:7px; border-radius:50%; background:rgba(255,255,255,.30); }
+.page-dot.active { background:rgba(255,255,255,.88); }
+
+/* dock */
+.dock-wrap {
+  padding:0 20px calc(env(safe-area-inset-bottom) + 14px);
+}
+.dock {
+  display:flex; justify-content:space-around; align-items:center;
+  padding:14px 16px;
+  border-radius:26px;
+}
+.dock .app-icon {
+  width:min(62px,15vw); height:min(62px,15vw);
+  border-radius:18px;
+}
+
+/* ── APP ICON COLOR THEMES ── */
+.ico-memo   { background:linear-gradient(145deg,#ffd60a 0%,#ffb800 100%); }
+.ico-diary  { background:linear-gradient(145deg,#ff9f0a 0%,#e8550a 100%); }
+.ico-quiz   { background:linear-gradient(145deg,#2c2c42 0%,#1a1a2e 100%);
+  border:1px solid rgba(160,160,200,.22); }
+.ico-intro  { background:linear-gradient(145deg,#c9a66b 0%,#9e7a3c 100%); }
+.ico-murmur { background:linear-gradient(145deg,#32aae0 0%,#1a72c0 100%); }
+.ico-bottle { background:linear-gradient(145deg,#1a8880 0%,#0d5a54 100%); }
+
+</style>
+</head>
+<body>
+
+<div class="wallpaper"></div>
+<div class="stars-layer" id="starsLayer"></div>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+  <span class="sb-time" id="sbTime">22:48</span>
+  <div class="sb-icons">
+    <div class="sb-signal"><span></span><span></span><span></span></div>
+    <div class="sb-wifi"><i></i></div>
+    <div class="sb-battery"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     ① LOCK SCREEN
+══════════════════════════════ -->
+<div class="screen" id="lockScreen">
+
+  <div class="lock-clock">
+    <div class="lock-time" id="lockTime">22:48</div>
+    <div class="lock-date" id="lockDate">2月 26日 星期三</div>
+  </div>
+
+  <div class="lock-notifs">
+    <div class="notif-card glass" onclick="tapNotif('memo')">
+      <div class="notif-ico ico-memo">備</div>
+      <div class="notif-body">
+        <div class="notif-app">備忘錄</div>
+        <div class="notif-text">55 則筆記等你翻閱</div>
+      </div>
+      <div class="notif-when">剛剛</div>
+    </div>
+    <div class="notif-card glass" onclick="tapNotif('diary')">
+      <div class="notif-ico ico-diary">記</div>
+      <div class="notif-body">
+        <div class="notif-app">日記</div>
+        <div class="notif-text">M 上次寫於 2025/01/15</div>
+      </div>
+      <div class="notif-when">6 天前</div>
+    </div>
+    <div class="notif-card glass" onclick="tapNotif('quiz')">
+      <div class="notif-ico ico-quiz">問</div>
+      <div class="notif-body">
+        <div class="notif-app">問卷</div>
+        <div class="notif-text">CASE_080 尚未查閱</div>
+      </div>
+      <div class="notif-when">昨天</div>
+    </div>
+  </div>
+
+  <div class="lock-bottom">
+    <div class="home-indicator"></div>
+    <div class="swipe-hint" id="lockHint">↑ 滑動解鎖</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     ② NOTIFICATION CENTER
+══════════════════════════════ -->
+<div class="screen hidden enter-from-below" id="notifScreen">
+
+  <div class="nc-header">
+    <div class="nc-title">通知中心</div>
+    <div class="nc-time" id="ncTime">22:48</div>
+  </div>
+
+  <div class="nc-list">
+    <div class="nc-card glass" onclick="goApp('memo')">
+      <div class="nc-ico ico-memo">備</div>
+      <div class="nc-body">
+        <div class="nc-app">備忘錄</div>
+        <div class="nc-preview">55 則筆記等你翻閱</div>
+        <div class="nc-sub">點擊 M 記錄的一切</div>
+      </div>
+      <div class="nc-when">剛剛</div>
+    </div>
+    <div class="nc-card glass" onclick="goApp('diary')">
+      <div class="nc-ico ico-diary">記</div>
+      <div class="nc-body">
+        <div class="nc-app">日記</div>
+        <div class="nc-preview">M 上次寫於 2025/01/15</div>
+        <div class="nc-sub">最近生活紀錄</div>
+      </div>
+      <div class="nc-when">6 天前</div>
+    </div>
+    <div class="nc-card glass" onclick="goApp('quiz')">
+      <div class="nc-ico ico-quiz">問</div>
+      <div class="nc-body">
+        <div class="nc-app">問卷</div>
+        <div class="nc-preview">CASE_080 尚未查閱</div>
+        <div class="nc-sub">80 份心理側寫檔案</div>
+      </div>
+      <div class="nc-when">昨天</div>
+    </div>
+    <div class="nc-card glass" onclick="goApp('intro')">
+      <div class="nc-ico ico-intro">介</div>
+      <div class="nc-body">
+        <div class="nc-app">自我介紹</div>
+        <div class="nc-preview">22 張名片，一個人慢慢翻</div>
+        <div class="nc-sub">No.01 — No.22</div>
+      </div>
+      <div class="nc-when">本週</div>
+    </div>
+    <div class="nc-card glass" onclick="goApp('murmur')">
+      <div class="nc-ico ico-murmur">碎</div>
+      <div class="nc-body">
+        <div class="nc-app">碎碎念</div>
+        <div class="nc-preview">深夜傳來的 10 則碎碎念</div>
+        <div class="nc-sub">凌晨 2:47 · 深夜 11:58</div>
+      </div>
+      <div class="nc-when">上週</div>
+    </div>
+    <div class="nc-card glass" onclick="goApp('bottle')">
+      <div class="nc-ico ico-bottle">信</div>
+      <div class="nc-body">
+        <div class="nc-app">漂流信</div>
+        <div class="nc-preview">隨機抽一封，給今天的你</div>
+        <div class="nc-sub">共 10 封，不重複抽</div>
+      </div>
+      <div class="nc-when">上個月</div>
+    </div>
+  </div>
+
+  <div class="nc-bottom">
+    <div class="nc-go-home" onclick="goHome()">
+      <span>前往主畫面</span>
+      <span class="nc-go-home-arr">↑</span>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     ③ HOME SCREEN
+══════════════════════════════ -->
+<div class="screen hidden enter-from-below" id="homeScreen">
+
+  <div class="home-top">
+    <div class="home-lock-btn" onclick="goLock()">鎖定</div>
+  </div>
+
+  <div class="app-grid">
+    <div class="app-row">
+      <div class="app-item" onclick="goApp('memo')">
+        <div class="app-icon ico-memo">備</div>
+        <div class="app-label">備忘錄</div>
+      </div>
+      <div class="app-item" onclick="goApp('diary')">
+        <div class="app-icon ico-diary">記</div>
+        <div class="app-label">日記</div>
+      </div>
+      <div class="app-item" onclick="goApp('quiz')">
+        <div class="app-icon ico-quiz">問</div>
+        <div class="app-label">問卷</div>
+      </div>
+    </div>
+    <div class="app-row">
+      <div class="app-item" onclick="goApp('intro')">
+        <div class="app-icon ico-intro">介</div>
+        <div class="app-label">自我介紹</div>
+      </div>
+      <div class="app-item" onclick="goApp('murmur')">
+        <div class="app-icon ico-murmur">碎</div>
+        <div class="app-label">碎碎念</div>
+      </div>
+      <div class="app-item" onclick="goApp('bottle')">
+        <div class="app-icon ico-bottle">信</div>
+        <div class="app-label">漂流信</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page-dots">
+    <div class="page-dot active"></div>
+    <div class="page-dot"></div>
+  </div>
+
+  <div class="dock-wrap">
+    <div class="dock glass">
+      <div class="app-item" onclick="goApp('memo')">
+        <div class="app-icon ico-memo">備</div>
+        <div class="app-label">備忘錄</div>
+      </div>
+      <div class="app-item" onclick="goApp('diary')">
+        <div class="app-icon ico-diary">記</div>
+        <div class="app-label">日記</div>
+      </div>
+      <div class="app-item" onclick="goApp('quiz')">
+        <div class="app-icon ico-quiz">問</div>
+        <div class="app-label">問卷</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── STARS ──
+const sl = document.getElementById('starsLayer');
+const twA = ['tw1','tw2','tw3'];
+for (let i = 0; i < 160; i++) {
+  const s = document.createElement('div');
+  s.className = 'star';
+  const sz = Math.random() < .14 ? 1.2+Math.random()*1.8 : .3+Math.random()*.9;
+  s.style.cssText = `
+    width:${sz}px;height:${sz}px;
+    left:${Math.random()*100}%;top:${Math.random()*100}%;
+    background:rgba(255,255,255,${.15+Math.random()*.55});
+    animation:${twA[i%3]} ${2.5+Math.random()*5}s ${Math.random()*8}s ease-in-out infinite;
+  `;
+  sl.appendChild(s);
+}
+
+// ── CLOCK ──
+const WEEK = ['日','一','二','三','四','五','六'];
+function updateClock() {
+  const now  = new Date();
+  const hh   = String(now.getHours()).padStart(2,'0');
+  const mm   = String(now.getMinutes()).padStart(2,'0');
+  const timeStr = `${hh}:${mm}`;
+  const dateStr = `${now.getMonth()+1}月 ${now.getDate()}日 星期${WEEK[now.getDay()]}`;
+  document.getElementById('sbTime').textContent   = timeStr;
+  document.getElementById('lockTime').textContent = timeStr;
+  document.getElementById('ncTime').textContent   = timeStr;
+  document.getElementById('lockDate').textContent = dateStr;
+}
+updateClock();
+setInterval(updateClock, 10000);
+
+// ── STATE MACHINE ──
+// States: 'lock' → 'notif' → 'home'
+let state = 'lock';
+
+const lockEl  = document.getElementById('lockScreen');
+const notifEl = document.getElementById('notifScreen');
+const homeEl  = document.getElementById('homeScreen');
+
+function goNotif() {
+  if (state !== 'lock') return;
+  state = 'notif';
+  // lock exits up
+  lockEl.classList.add('exit-up');
+  // notif enters from below
+  notifEl.classList.remove('hidden');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    notifEl.classList.add('active');
+  }));
+  lockEl.addEventListener('transitionend', () => {
+    lockEl.classList.add('hidden');
+    lockEl.classList.remove('exit-up');
+  }, { once: true });
+}
+
+function goHome() {
+  if (state !== 'notif') return;
+  state = 'home';
+  // notif exits up
+  notifEl.classList.add('exit-up');
+  // home enters
+  homeEl.classList.remove('hidden');
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    homeEl.classList.add('active');
+  }));
+  notifEl.addEventListener('transitionend', () => {
+    notifEl.classList.add('hidden');
+    notifEl.classList.remove('exit-up','active');
+  }, { once: true });
+}
+
+function goLock() {
+  if (state === 'lock') return;
+  // return to lock
+  const fromEl = state === 'home' ? homeEl : notifEl;
+  fromEl.classList.remove('active');
+  fromEl.addEventListener('transitionend', () => {
+    fromEl.classList.add('hidden');
+    fromEl.classList.remove('exit-up');
+  }, { once: true });
+  lockEl.classList.remove('hidden','exit-up');
+  lockEl.style.transform = 'translateY(100%)';
+  lockEl.style.opacity   = '0';
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    lockEl.style.transition = 'transform .44s cubic-bezier(.4,0,.2,1), opacity .4s ease';
+    lockEl.style.transform  = '';
+    lockEl.style.opacity    = '';
+    setTimeout(() => { lockEl.style.transition = ''; }, 460);
+  }));
+  state = 'lock';
+}
+
+// ── SWIPE UP on lock ──
+let touchStartY = 0;
+lockEl.addEventListener('touchstart', e => { touchStartY = e.touches[0].clientY; }, { passive:true });
+lockEl.addEventListener('touchend', e => {
+  if (e.changedTouches[0].clientY < touchStartY - 40) goNotif();
+}, { passive:true });
+// click anywhere on lock screen also advances
+lockEl.addEventListener('click', goNotif);
+
+// ── SWIPE UP on notif ──
+let ncTouchY = 0;
+notifEl.addEventListener('touchstart', e => { ncTouchY = e.touches[0].clientY; }, { passive:true });
+notifEl.addEventListener('touchend', e => {
+  if (e.changedTouches[0].clientY < ncTouchY - 55) goHome();
+}, { passive:true });
+
+// ── NAVIGATION ──
+// CODEX: 替換 href 為實際 React 路由
+const APP_ROUTES = {
+  memo:   'preview-memo.html',
+  diary:  '#/diary',
+  quiz:   'preview-questionnaire-E.html',
+  intro:  'preview-self-intro.html',
+  murmur: 'preview-murmur.html',
+  bottle: 'preview-drift-bottle.html',
+};
+
+function tapNotif(key) {
+  // From lock screen: go notif first, then navigate
+  goNotif();
+  setTimeout(() => goApp(key), 300);
+}
+
+function goApp(key) {
+  const route = APP_ROUTES[key];
+  if (!route || route.startsWith('#')) {
+    // React SPA route — use window.location or React Router
+    // window.location.hash = route;
+    alert(`→ ${key}`); // placeholder
+  } else {
+    window.location.href = route;
+  }
+}
+</script>
+</body>
+</html>
