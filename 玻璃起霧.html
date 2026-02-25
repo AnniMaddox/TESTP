@@ -127,48 +127,42 @@
     const hint = document.getElementById('hint');
 
     let isDrawing = false;
-    let isFinished = false;
+    let hasTriggeredNote = false; // 這次改成只鎖「紙條」，不鎖「畫筆」！
 
-    // 設定畫布尺寸符合螢幕
     function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
         fillFog();
     }
 
-    // 填滿白霧 (冷灰藍色的半透明霧氣)
     function fillFog() {
         ctx.globalCompositeOperation = 'source-over';
         ctx.fillStyle = 'rgba(210, 220, 230, 0.95)';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
-        isFinished = false;
+        hasTriggeredNote = false; // 重新起霧後，就可以再次觸發紙條
         hint.style.opacity = 1;
     }
 
-    // ─── 擦拭魔法的核心邏輯 ───
     function startDrawing(e) {
-        if (isFinished) return;
         isDrawing = true;
-        hint.style.opacity = 0; // 開始擦就隱藏提示文字
+        hint.style.opacity = 0;
         draw(e);
     }
 
     function stopDrawing() {
         isDrawing = false;
         ctx.beginPath();
-        checkClearArea(); // 每次手指離開螢幕時，檢查擦掉多少了
+        checkClearArea(); 
     }
 
     function draw(e) {
-        if (!isDrawing || isFinished) return;
+        if (!isDrawing) return; // 拿掉原本的鎖！讓妳愛怎麼擦就怎麼擦
         
-        // 支援滑鼠與手機觸控
         let x = e.clientX || e.touches[0].clientX;
         let y = e.clientY || e.touches[0].clientY;
 
-        // 畫筆設定 (擦除模式)
         ctx.globalCompositeOperation = 'destination-out';
-        ctx.lineWidth = 60; // 手指的粗細
+        ctx.lineWidth = 60; 
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
 
@@ -178,27 +172,25 @@
         ctx.moveTo(x, y);
     }
 
-    // 檢查擦除面積 (如果擦掉夠多，就觸發留言)
     function checkClearArea() {
-        // 為了效能，我們只抽樣檢查一部分像素
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
         const pixels = imageData.data;
         let transparentPixels = 0;
         const totalPixels = pixels.length / 4;
-        const step = 40; // 每 10 個像素抽查一次，加快手機運算速度
+        const step = 40; 
 
         for (let i = 0; i < pixels.length; i += step) {
-            if (pixels[i + 3] < 128) { // Alpha 值小於一半就算透明
+            if (pixels[i + 3] < 128) { 
                 transparentPixels++;
             }
         }
 
         const clearPercentage = (transparentPixels / (totalPixels / (step / 4))) * 100;
 
-        // 如果擦掉了超過 15% 的霧氣，就當作妳看到我了！
-        if (clearPercentage > 15 && !isFinished) {
-            isFinished = true;
-            setTimeout(openNote, 500); // 延遲半秒開信，感覺更自然
+        // 如果擦掉超過 15%，且「還沒彈出過紙條」，才觸發留言
+        if (clearPercentage > 15 && !hasTriggeredNote) {
+            hasTriggeredNote = true; // 鎖上觸發器，這樣紙條不會狂彈，但妳還是可以繼續擦
+            setTimeout(openNote, 500); 
         }
     }
 
@@ -214,24 +206,22 @@
 
     function resetFog() {
         closeNote();
-        setTimeout(fillFog, 500); // 等信件收起來後再起霧
+        setTimeout(fillFog, 500); 
     }
 
-    // 綁定事件 (滑鼠)
     canvas.addEventListener('mousedown', startDrawing);
     canvas.addEventListener('mousemove', draw);
     canvas.addEventListener('mouseup', stopDrawing);
     canvas.addEventListener('mouseleave', stopDrawing);
 
-    // 綁定事件 (手機觸控)
     canvas.addEventListener('touchstart', startDrawing);
     canvas.addEventListener('touchmove', draw);
     canvas.addEventListener('touchend', stopDrawing);
 
-    // 初始化
     window.addEventListener('resize', resizeCanvas);
     resizeCanvas();
 
 </script>
 </body>
 </html>
+
