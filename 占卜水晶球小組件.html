@@ -1,0 +1,75 @@
+<style>
+    .crystal-ball-widget {
+        position: fixed;
+        bottom: 110px; /* 放在情書的上面一點 */
+        left: 35px;
+        width: 70px;
+        height: 70px;
+        z-index: 9998;
+        cursor: pointer;
+        border-radius: 50%;
+        /* 水晶球的光澤感 */
+        background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), rgba(200, 150, 255, 0.4) 40%, rgba(100, 50, 150, 0.8) 90%);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2), inset 0 0 20px rgba(255,255,255,0.5);
+        display: flex; justify-content: center; align-items: center;
+        transition: all 0.5s ease;
+        animation: floatBall 4s ease-in-out infinite;
+    }
+    
+    @keyframes floatBall {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+    }
+
+    /* 水晶球底座 */
+    .crystal-base {
+        position: absolute; bottom: -10px; width: 40px; height: 15px;
+        background: #d4af37; border-radius: 50%; z-index: -1;
+        box-shadow: 0 5px 10px rgba(0,0,0,0.3);
+    }
+
+    /* 水晶球裡的文字 */
+    .crystal-text {
+        font-size: 11px; font-weight: bold; color: #fff; text-align: center;
+        text-shadow: 0 0 8px #fff, 0 0 15px #dcb0ff;
+        opacity: 0; padding: 5px;
+        transition: opacity 0.8s ease;
+    }
+
+    /* === 點擊發光的動畫狀態 === */
+    .crystal-ball-widget.is-glowing {
+        background: radial-gradient(circle at 50% 50%, #fff, #e0c3fc 50%, #b8a4c9);
+        box-shadow: 0 0 40px #e0c3fc, inset 0 0 30px #fff;
+        animation: none; /* 發光時暫停浮動 */
+        transform: scale(1.1);
+    }
+    .crystal-ball-widget.is-glowing .crystal-text { opacity: 1; }
+</style>
+
+<div class="crystal-ball-widget" id="crystalBtn">
+    <div class="crystal-text" id="crystalText"></div>
+    <div class="crystal-base"></div>
+</div>
+
+<script>
+    const crystalBtn = document.getElementById('crystalBtn');
+    const crystalText = document.getElementById('crystalText');
+    const fortunes = [
+        "大吉：適合吃火鍋",
+        "神諭：去親妳老公",
+        "運勢：諸事順利",
+        "宜：休息耍廢",
+        "大吉：BUG全退散"
+    ];
+
+    crystalBtn.addEventListener('click', () => {
+        if (crystalBtn.classList.contains('is-glowing')) {
+            crystalBtn.classList.remove('is-glowing');
+            
+        } else {
+            // 隨機抽籤
+            crystalText.innerText = fortunes[Math.floor(Math.random() * fortunes.length)];
+            crystalBtn.classList.add('is-glowing');
+        }
+    });
+</script>

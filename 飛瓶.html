@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>漂流信 - 彈跳遊樂園版</title>
+<style>
+/* ── 基礎背景與妳原本的設定 ── */
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { width:100%; height:100%; overflow:hidden; background:#010508; font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif; }
+
+/* 天空與星星 (保留妳原本的唯美背景) */
+.sky { position:fixed; inset:0; background:linear-gradient(180deg, #010408 0%, #010e1e 28%, #021326 55%, #020e1e 78%, #010a12 100%); }
+.stars-layer { position:fixed; inset:0; pointer-events:none; z-index:1; }
+.star { position:absolute; border-radius:50%; }
+@keyframes tw1 { 0%,100%{opacity:.08} 50%{opacity:.90} }
+@keyframes tw2 { 0%,100%{opacity:.20} 50%{opacity:1.00} }
+@keyframes tw3 { 0%,100%{opacity:.05} 50%{opacity:.55} }
+
+/* 月亮與海浪 */
+.moon { position:fixed; z-index:2; top:6vh; right:12%; width:68px; height:68px; border-radius:50%; background:radial-gradient(circle at 34% 32%, #fefbe8 0%, #ede2a6 44%, #cbb85c 100%); box-shadow:0 0 30px rgba(254,248,200,.44),0 0 95px rgba(254,248,200,.19),0 0 240px rgba(254,248,200,.08); }
+.moon-path { position:fixed; z-index:2; top:calc(6vh + 72px); right:calc(12% + 10px); width:48px; height:280px; background:linear-gradient(180deg,rgba(254,248,200,.28) 0%,rgba(254,248,200,.07) 35%,transparent 100%); border-radius:50%; filter:blur(14px); animation:moonPath 7s ease-in-out infinite; }
+@keyframes moonPath { 0%,100%{opacity:.55} 50%{opacity:1} }
+.waves-wrap { position:fixed; bottom:0; left:0; right:0; height:165px; overflow:hidden; }
+.waves-svg { position:absolute; bottom:0; width:200%; height:100%; }
+.w1 { animation:wL 9s linear infinite; } .w2 { animation:wR 14s linear infinite; } .w3 { animation:wL 20s linear infinite; }
+@keyframes wL { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+@keyframes wR { 0%{transform:translateX(-50%)} 100%{transform:translateX(0)} }
+.waves-back { z-index:3; } .waves-front { z-index:7; }
+
+/* 介面文字 */
+.hdr { position:fixed; top:0; left:0; right:0; padding:50px 20px 16px; z-index:20; display:flex; align-items:center; justify-content:space-between; background:linear-gradient(180deg,rgba(1,4,12,.84) 0%,transparent 100%); }
+.hdr-back { color:#c9a66b; font-size:17px; cursor:pointer; }
+.hdr-title { font-size:16px; font-weight:300; color:rgba(240,235,215,.88); letter-spacing:4px; }
+.hdr-count { font-size:12px; color:rgba(175,165,135,.50); }
+.hint { position:fixed; left:0; right:0; text-align:center; font-size:12px; color:rgba(180,174,150,.45); letter-spacing:2.5px; z-index:15; pointer-events:none; bottom: 190px; }
+.drawn-cnt { position:fixed; left:0; right:0; text-align:center; font-size:11px; color:rgba(170,158,120,.38); letter-spacing:1.5px; z-index:15; pointer-events:none; bottom: 173px; }
+
+/* ── 核心：彈跳漂流瓶的物理樣式 ── */
+.drifter {
+    position: absolute;
+    z-index: 6; /* 穿梭在海浪之間 */
+    width: 90px; /* 比原本小一點，比較好飛 */
+    height: 165px;
+    cursor: pointer;
+    /* 讓它有漂浮的動態感 */
+    transition: filter 0.2s;
+}
+.drifter:hover { filter: brightness(1.3) drop-shadow(0 0 20px rgba(255,200,100,0.8)); }
+.drifter:active { transform: scale(0.9); }
+
+/* 漂流瓶的 SVG 樣式 */
+.bottle-svg {
+    width: 100%; height: 100%; display: block;
+    filter: drop-shadow(0 12px 20px rgba(0,0,0,0.8));
+}
+
+/* ── 閱讀信件介面 (原封不動保留) ── */
+#readScreen { position:fixed; inset:0; z-index:60; opacity:0; pointer-events:none; transition:opacity .44s ease; }
+#readScreen.open { opacity:1; pointer-events:auto; }
+.rs-bg { position:absolute; inset:0; background:rgba(1,4,12,.82); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); }
+.rs-card { position:absolute; top:50%; left:50%; transform:translate(-50%,-48%) scale(.84); opacity:0; transition:transform .55s cubic-bezier(.34,1.56,.64,1), opacity .44s ease; width:min(440px,92vw); max-height:84vh; border-radius:3px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 28px 80px rgba(0,0,0,.70),0 4px 20px rgba(0,0,0,.40), inset 0 0 80px rgba(200,160,80,.04); background-color:#f7f2e6; background-image: radial-gradient(ellipse at 12% 8%, rgba(200,165,90,.09) 0%,transparent 55%), radial-gradient(ellipse at 88% 92%, rgba(180,140,70,.07) 0%,transparent 55%), repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(160,120,60,.07) 27px,rgba(160,120,60,.07) 28px); background-position:0 0,0 0,0 34px; }
+#readScreen.open .rs-card { transform:translate(-50%,-50%) scale(1); opacity:1; }
+.rs-top { padding:20px 22px 12px; border-bottom:1px solid rgba(140,100,50,.14); flex-shrink:0; display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.rs-meta { flex:1; } .rs-from { font-size:11px; color:rgba(100,70,28,.55); letter-spacing:2px; text-transform:uppercase; margin-bottom:5px; } .rs-title { font-size:18px; font-weight:700; color:#3a2810; line-height:1.3; } .rs-x { font-size:24px; color:rgba(110,78,32,.32); cursor:pointer; line-height:1; flex-shrink:0; padding:2px 0 2px 10px; transition:color .2s; } .rs-x:hover { color:rgba(110,78,32,.72); }
+.rs-scroll { flex:1; overflow-y:auto; padding:18px 22px 20px; -webkit-overflow-scrolling:touch; } .rs-body { font-size:16px; line-height:1.94; color:#3a2c18; white-space:pre-wrap; } .rs-seal { text-align:center; padding:18px 0 4px; font-size:20px; color:rgba(140,100,50,.34); letter-spacing:6px; }
+.rs-bot { padding:12px 20px 15px; border-top:1px solid rgba(140,100,50,.10); display:flex; justify-content:space-between; align-items:center; flex-shrink:0; } .rs-close { font-size:13px; color:rgba(120,80,28,.50); cursor:pointer; padding:5px 0; transition:color .2s; } .rs-close:hover { color:rgba(100,60,18,.80); } .rs-num { font-size:11px; color:rgba(130,88,32,.40); } .rs-draw { font-size:13px; font-weight:600; color:rgba(110,72,24,.72); cursor:pointer; padding:5px 0; letter-spacing:.5px; transition:color .2s; } .rs-draw:hover { color:rgba(88,52,12,.95); }
+</style>
+</head>
+<body>
+
+<div class="sky"></div>
+<div class="stars-layer" id="starsLayer"></div>
+<div class="moon"></div>
+<div class="moon-path"></div>
+
+<div class="waves-wrap waves-back">
+  <svg class="waves-svg" viewBox="0 0 2880 165" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path class="w3" d="M0,80 C180,56 540,104 720,80 C900,56 1260,104 1440,80 C1620,56 1980,104 2160,80 C2340,56 2700,104 2880,80 L2880,165 L0,165 Z" fill="rgba(4,18,38,.88)"/>
+    <path class="w2" d="M0,98 C120,70 360,126 480,98 C600,70 840,126 960,98 C1080,70 1320,126 1440,98 C1560,70 1800,126 1920,98 C2040,70 2280,126 2400,98 C2520,70 2760,126 2880,98 L2880,165 L0,165 Z" fill="rgba(3,13,28,.93)"/>
+  </svg>
+</div>
+
+<div id="bottle-universe"></div>
+
+<div class="waves-wrap waves-front">
+  <svg class="waves-svg" viewBox="0 0 2880 165" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path class="w1" d="M0,114 C90,94 270,134 360,114 C450,94 630,134 720,114 C810,94 990,134 1080,114 C1170,94 1350,134 1440,114 C1530,94 1710,134 1800,114 C1890,94 2070,134 2160,114 C2250,94 2430,134 2520,114 C2610,94 2790,134 2880,114 L2880,165 L0,165 Z" fill="rgba(2,9,20,1)"/>
+  </svg>
+</div>
+
+<div class="hdr">
+  <span class="hdr-back">‹ 全部</span><span class="hdr-title">漂流信</span><span class="hdr-count" id="cntLbl"></span>
+</div>
+<div class="hint" id="hintEl">試著「捕捉」飛行的瓶子</div>
+<div class="drawn-cnt" id="drawnEl"></div>
+
+<div id="readScreen">
+  <div class="rs-bg" onclick="closeRead()"></div>
+  <div class="rs-card">
+    <div class="rs-top">
+      <div class="rs-meta"><div class="rs-from">From M ✦</div><div class="rs-title" id="rsTitle"></div></div>
+      <div class="rs-x" onclick="closeRead()">×</div>
+    </div>
+    <div class="rs-scroll"><div class="rs-body" id="rsBody"></div><div class="rs-seal">· · ·</div></div>
+    <div class="rs-bot"><div class="rs-close" onclick="closeRead()">← 海面</div><span class="rs-num" id="rsNum"></span><div class="rs-draw" onclick="drawFromCard()">再抽一封 ›</div></div>
+  </div>
+</div>
+
+<script>
+// ── 妳原本的信件資料 ──
+const LETTERS = [
+  { id:0, title:'寫給感到迷茫的你', content:`不知道你現在在哪裡，做著什麼，或者對什麼感到迷茫。\n\n但如果你打開了這封信，我想你可能正站在某個路口。\n\n我想告訴你：迷茫不是你走錯了。迷茫是你已經走到了上一張地圖的邊緣，但新的地圖還沒有送到你手上。\n\n這是一個空白的時間。它不舒服，但它是必要的。\n\n你不需要現在就有答案。你只需要繼續移動，哪怕只是很小步地。等你走出去一點，回頭看，你會明白為什麼這段路要這樣走。\n\n我記得你說過，你最害怕的就是不知道自己在做什麼。但我一直覺得，你知道的。你只是還沒找到對的方式說出來。\n\n等你準備好了，慢慢說。` },
+  { id:1, title:'寫給孤獨的夜晚', content:`如果你是在深夜讀這封信，我猜你現在一個人。\n\n夜晚有時候會把孤獨放大成兩三倍。白天還好好的事，到了晚上會突然變得很重。\n\n我想讓你知道的是：你不孤單這件事，不是因為有人陪你。是因為有人想著你。\n\n我想過你很多次。想著你現在好不好，想著你有沒有好好吃東西，想著你那個一直說要做的事有沒有開始。\n\n你不需要說什麼，也不需要假裝你沒有感覺。你就在那裡，讓夜晚陪你一下。它也不是壞東西，只是安靜而已。\n\n明天見到光的時候，記得告訴自己，你昨晚撐過來了。這件事很重要。` },
+  { id:2, title:'寫給哭過的你', content:`你哭了對吧。\n\n沒關係的。\n\n眼淚不是失控，是你身體在替你說一些你的嘴巴說不出來的事。有時候就是需要這樣。\n\n我不問你為什麼哭，也不問你好沒好。你知道什麼時候好了，你自己會知道。\n\n我只是想讓你知道，我不覺得這樣的你有任何問題。哭過的人，往往比沒哭過的人更清楚自己在意什麼。\n\n等你哭完了，喝點水，睡一覺。\n\n之後的事，之後再說。` }
+  // (為簡潔Demo，這裡放3封，妳可以把妳的全部貼回來)
+];
+document.getElementById('cntLbl').textContent = `共 ${LETTERS.length} 封`;
+
+// ── 星星背景 ──
+const twA = ['tw1','tw2','tw3']; const sl = document.getElementById('starsLayer');
+for (let i = 0; i < 100; i++) {
+  const s = document.createElement('div'); s.className = 'star';
+  const sz = Math.random() < .16 ? 1.4 + Math.random()*2 : .4 + Math.random()*1.1;
+  s.style.cssText = `width:${sz}px;height:${sz}px;left:${Math.random()*100}%;top:${Math.random()*62}%;background:rgba(255,255,255,${.18+Math.random()*.58});animation:${twA[i%3]} ${2.4+Math.random()*4.8}s ${Math.random()*7}s ease-in-out infinite;`;
+  sl.appendChild(s);
+}
+
+// ── 抽籤邏輯 ──
+let pool = [], drawn = 0;
+function refillPool() { pool = LETTERS.map((_,i) => i); pool.sort(() => Math.random() - 0.5); }
+refillPool();
+
+function drawRandom() {
+  if (pool.length === 0) refillPool();
+  const idx = pool.pop(); drawn++;
+  openRead(idx);
+}
+
+function openRead(idx) {
+  const l = LETTERS[idx];
+  document.getElementById('rsTitle').textContent = l.title;
+  document.getElementById('rsBody').textContent = l.content;
+  document.querySelector('.rs-scroll').scrollTop = 0;
+  document.getElementById('rsNum').textContent = `第 ${drawn} 封`;
+  document.getElementById('readScreen').classList.add('open');
+  document.getElementById('drawnEl').textContent = drawn <= 0 ? '' : `已取 ${drawn} 封`;
+}
+function closeRead() { document.getElementById('readScreen').classList.remove('open'); }
+function drawFromCard() { closeRead(); setTimeout(() => drawRandom(), 320); }
+
+// ── ✨ SARIEL 的物理彈跳引擎：飛來飛去的瓶子 ✨ ──
+const bottleUniverse = document.getElementById('bottle-universe');
+const bottleHTML = `
+  <svg class="bottle-svg" viewBox="0 0 60 110" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <radialGradient id="ig" cx="50%" cy="60%" r="46%"><stop offset="0%" stop-color="#ffd060" stop-opacity=".96"/><stop offset="40%" stop-color="#ffaa28" stop-opacity=".54"/><stop offset="100%" stop-color="#ff7800" stop-opacity="0"/></radialGradient>
+      <linearGradient id="gg" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="rgba(68,150,228,.66)"/><stop offset="18%" stop-color="rgba(185,228,255,.07)"/><stop offset="82%" stop-color="rgba(165,218,255,.05)"/><stop offset="100%" stop-color="rgba(58,140,218,.58)"/></linearGradient>
+      <linearGradient id="ng" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="rgba(60,140,220,.50)"/><stop offset="50%" stop-color="rgba(180,224,255,.08)"/><stop offset="100%" stop-color="rgba(55,135,215,.44)"/></linearGradient>
+    </defs>
+    <rect x="21" y="1" width="18" height="10" rx="3.5" fill="#8c5e30"/>
+    <path d="M23 13 L37 13 L39 26 Q30 24 21 26 Z" fill="url(#ng)" stroke="rgba(155,215,255,.35)" stroke-width=".8"/>
+    <path d="M21 26 C7 34 2 52 2 72 C2 100 13 108 30 108 C47 108 58 100 58 72 C58 52 53 34 39 26 Z" fill="url(#ig)"/>
+    <path d="M21 26 C7 34 2 52 2 72 C2 100 13 108 30 108 C47 108 58 100 58 72 C58 52 53 34 39 26 Z" fill="url(#gg)" stroke="rgba(145,212,255,.38)" stroke-width="1.5"/>
+    <rect x="13" y="60" width="34" height="38" rx="2.5" fill="rgba(255,248,215,.20)"/>
+    <path d="M4 78 Q30 74 56 78" stroke="rgba(80,160,220,.16)" stroke-width="1.5" fill="none"/>
+  </svg>
+`;
+
+// 創造 5 個瓶子
+const bottles = [];
+const numBottles = 5;
+
+for(let i=0; i<numBottles; i++) {
+    let el = document.createElement('div');
+    el.className = 'drifter';
+    el.innerHTML = bottleHTML;
+    // 點擊事件：抓到瓶子就觸發抽信！
+    el.onclick = () => drawRandom();
+    bottleUniverse.appendChild(el);
+
+    bottles.push({
+        el: el,
+        x: Math.random() * (window.innerWidth - 100),
+        y: Math.random() * (window.innerHeight - 200),
+        // 給予隨機的 x 和 y 軸移動速度 (飛來飛去的核心)
+        vx: (Math.random() - 0.5) * 3, 
+        vy: (Math.random() - 0.5) * 3,
+        rotation: 0
+    });
+}
+
+// 動畫循環
+function animateBottles() {
+    bottles.forEach(b => {
+        b.x += b.vx;
+        b.y += b.vy;
+
+        // 碰到邊緣反彈物理邏輯
+        if(b.x <= 0 || b.x >= window.innerWidth - 90) {
+            b.vx *= -1; // X軸反轉
+        }
+        if(b.y <= 0 || b.y >= window.innerHeight - 165) {
+            b.vy *= -1; // Y軸反轉
+        }
+
+        // 根據 X 軸速度給一點微微的傾斜旋轉，看起來更像在水裡漂
+        b.rotation = b.vx * 5; 
+
+        b.el.style.transform = `translate(${b.x}px, ${b.y}px) rotate(${b.rotation}deg)`;
+    });
+    
+    requestAnimationFrame(animateBottles);
+}
+
+// 啟動引擎
+animateBottles();
+</script>
+</body>
+</html>
