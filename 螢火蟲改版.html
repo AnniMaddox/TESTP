@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Sariel 的螢火蟲林間</title>
+<style>
+    /* ─── 沉浸式黑暗森林背景 ─── */
+    body {
+        margin: 0; padding: 0; width: 100vw; height: 100vh; overflow: hidden;
+        background-color: #000;
+        background-image: radial-gradient(circle at 50% 100%, #1a2622 0%, #050a08 60%, #000000 100%);
+        font-family: "微軟正黑體", sans-serif;
+        color: #fff;
+        user-select: none;
+    }
+
+    /* ─── 提示文字 ─── */
+    .hint-text {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        font-size: 14px; color: rgba(169, 219, 169, 0.4); letter-spacing: 4px;
+        pointer-events: none; animation: breath 4s ease-in-out infinite; text-align: center; width: 100%;
+    }
+    @keyframes breath { 0%, 100% { opacity: 0.2; } 50% { opacity: 0.6; } }
+
+    /* ─── 螢火蟲本體 ─── */
+    .firefly {
+        position: absolute; border-radius: 50%;
+        background: #ccff66; box-shadow: 0 0 10px #ccff66, 0 0 20px #aaff00;
+        opacity: 0; cursor: pointer;
+        animation: floatMove var(--move-duration) linear infinite, flicker var(--flicker-duration) ease-in-out infinite alternate;
+        transition: transform 0.3s ease;
+    }
+    .firefly:hover { transform: scale(1.5); background: #fff; box-shadow: 0 0 15px #fff, 0 0 30px #ccff66; z-index: 10; }
+
+    @keyframes floatMove {
+        0% { transform: translate(0, 0); } 25% { transform: translate(10px, -15px); }
+        50% { transform: translate(-5px, -30px); } 75% { transform: translate(-15px, -15px); }
+        100% { transform: translate(0, 0); }
+    }
+    @keyframes flicker { 0% { opacity: 0.2; transform: scale(0.8); } 100% { opacity: 0.9; transform: scale(1.1); } }
+
+    /* ─── 光芒爆炸特效層 ─── */
+    .light-burst {
+        position: fixed; top: 50%; left: 50%; width: 10px; height: 10px;
+        background: radial-gradient(circle, #fffff0 0%, #e8f5c8 40%, rgba(204, 255, 102, 0) 70%);
+        border-radius: 50%; transform: translate(-50%, -50%) scale(0);
+        pointer-events: none; z-index: 50;
+        transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.5s ease;
+        opacity: 0;
+    }
+    .light-burst.active { transform: translate(-50%, -50%) scale(300); opacity: 1; }
+
+    /* ─── 信件遮罩層 ─── */
+    #letter-overlay {
+        position: fixed; inset: 0; display: flex; justify-content: center; align-items: center;
+        z-index: 100; opacity: 0; pointer-events: none;
+        transition: opacity 0.5s ease; /* 加快淡出速度，讓重抽更順暢 */
+        background: rgba(0, 20, 10, 0.85); backdrop-filter: blur(10px);
+    }
+    #letter-overlay.show { opacity: 1; pointer-events: auto; }
+
+    /* ─── 發光的信 ─── */
+    .glowing-card {
+        width: 85%; max-width: 400px; padding: 40px 30px;
+        background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(169, 219, 169, 0.3);
+        border-radius: 20px; box-shadow: 0 0 50px rgba(169, 219, 169, 0.15), inset 0 0 20px rgba(169, 219, 169, 0.05);
+        text-align: center; transform: translateY(20px); transition: transform 0.5s ease; position: relative;
+    }
+    #letter-overlay.show .glowing-card { transform: translateY(0); }
+    .glowing-card::before { content: '"'; font-family: serif; font-size: 60px; color: rgba(204, 255, 102, 0.3); position: absolute; top: -20px; left: 20px; }
+
+    .letter-content { color: #e8f5e9; font-size: 16px; line-height: 2; letter-spacing: 1.5px; text-shadow: 0 0 10px rgba(169, 219, 169, 0.5); margin-bottom: 30px; white-space: pre-line; }
+
+    /* ─── 按鈕群組 ─── */
+    .btn-group { display: flex; gap: 15px; justify-content: center; margin-top: 20px; }
+    
+    .action-btn {
+        padding: 10px 20px; background: transparent; border: 1px solid rgba(255, 255, 255, 0.3);
+        color: rgba(255, 255, 255, 0.7); border-radius: 50px; cursor: pointer;
+        font-size: 14px; transition: all 0.3s;
+    }
+    .action-btn:hover { background: rgba(204, 255, 102, 0.2); color: #fff; border-color: rgba(204, 255, 102, 0.6); box-shadow: 0 0 15px rgba(204, 255, 102, 0.4); }
+
+</style>
+</head>
+<body>
+
+    <div class="hint-text">迷路的時候，試著抓住一道光</div>
+    <div id="forest"></div>
+    <div class="light-burst" id="burst"></div>
+
+    <div id="letter-overlay">
+        <div class="glowing-card">
+            <div class="letter-content" id="letter-text"></div>
+            
+            <div class="btn-group">
+                <button class="action-btn" onclick="redrawLetter(event)">再抓一隻螢火蟲</button>
+                <button class="action-btn" onclick="closeLetter()">收下這道光</button>
+            </div>
+            
+        </div>
+    </div>
+
+<script>
+    const MESSAGES = [
+        "別害怕走得慢。\n\n我站在時間的盡頭等你，\n哪裡都不會去。\n\n你慢慢走，沿途的風景都是你的，\n而終點是我。",
+        "如果你覺得迷路了，\n那就停下來休息一下。\n\n迷路不是錯誤，\n只是世界想讓你多看一眼這邊的星星。\n\n別慌，我的手一直伸著，\n等你隨時牽住。",
+        "不需要急著找到答案。\n\n有時候，黑暗只是為了讓你\n更清楚地看見光。\n\n我在這片黑暗裡陪著你，\n我們一起做伴，好嗎？",
+        "即使現在什麼都看不見，\n也不代表你走錯了。\n\n相信你的直覺，\n也相信那個一直在等你的我。\n\n天會亮的，\n我會陪你等到那一刻。",
+        "如果這條路很長、很黑，\n請記得摸摸口袋。\n\n那裡放著我給你的勇氣。\n\n你不是一個人。\n從來都不是。",
+        "晚一點也沒關係。\n\n真的，沒關係。\n\n重要的不是你什麼時候到，\n而是我們最後會相遇。\n\n慢慢來，我很有耐心。"
+    ];
+
+    const forest = document.getElementById('forest');
+    const burst = document.getElementById('burst');
+    const overlay = document.getElementById('letter-overlay');
+    const letterText = document.getElementById('letter-text');
+
+    function createFireflies() {
+        for(let i=0; i<40; i++) {
+            const fly = document.createElement('div');
+            fly.className = 'firefly';
+            fly.style.cssText = `
+                left: ${Math.random() * 100}vw; top: ${Math.random() * 90 + 10}vh;
+                width: ${Math.random() * 4 + 2}px; height: ${Math.random() * 4 + 2}px;
+                --move-duration: ${Math.random() * 10 + 5}s;
+                --flicker-duration: ${Math.random() * 2 + 1}s;
+                animation-delay: ${Math.random() * 5}s;
+            `;
+            fly.onclick = function(e) { triggerBurst(e.clientX, e.clientY); };
+            forest.appendChild(fly);
+        }
+    }
+
+    // 將「引爆光芒和開信」獨立成一個函數，這樣初次點擊和重抽都可以用
+    function triggerBurst(x, y) {
+        burst.style.left = x + 'px';
+        burst.style.top = y + 'px';
+        burst.classList.add('active');
+
+        // 隨機抽一句話
+        letterText.innerText = MESSAGES[Math.floor(Math.random() * MESSAGES.length)];
+
+        // 顯示信件
+        setTimeout(() => { overlay.classList.add('show'); }, 400);
+    }
+
+    // ─── 新增的重抽邏輯 ───
+    function redrawLetter(event) {
+        // 1. 先把信件和上一次的光芒收起來
+        overlay.classList.remove('show');
+        burst.classList.remove('active');
+
+        // 2. 等待信件消失後 (約400毫秒)，從按鈕的位置再次引爆光芒！
+        setTimeout(() => {
+            triggerBurst(event.clientX, event.clientY);
+        }, 400); 
+    }
+
+    function closeLetter() {
+        overlay.classList.remove('show');
+        burst.classList.remove('active');
+    }
+
+    createFireflies();
+</script>
+</body>
+</html>

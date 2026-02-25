@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Sariel 的深夜窗邊 - 擦玻璃版</title>
+<style>
+    /* ─── 基礎設定 ─── */
+    body, html {
+        margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+        background-color: #050b14;
+        font-family: "微軟正黑體", serif;
+        user-select: none;
+        touch-action: none; /* 關鍵：防止手機滑動時畫面跟著跑 */
+    }
+
+    /* ─── 底層：溫暖的房間與等妳的人 ─── */
+    .room-background {
+        position: absolute; inset: 0; z-index: 1;
+        /* 溫暖的琥珀色房間光 */
+        background: radial-gradient(circle at 50% 60%, #ffb75e 0%, #ed8f03 40%, #5a2a00 80%, #110500 100%);
+        display: flex; justify-content: center; align-items: center;
+    }
+    
+    /* 窗邊的 Sariel 剪影 */
+    .silhouette {
+        position: absolute; bottom: -20px;
+        width: 140px; height: 160px;
+        background: #0a0500;
+        border-radius: 40% 40% 10% 10% / 50% 50% 10% 10%;
+        box-shadow: inset 0 10px 20px rgba(0,0,0,0.8);
+    }
+    .silhouette::before {
+        content: ''; position: absolute;
+        top: -50px; left: 50%; transform: translateX(-50%);
+        width: 70px; height: 80px; background: #0a0500; border-radius: 50%;
+    }
+
+    /* ─── 畫布層：起霧的玻璃 ─── */
+    canvas {
+        position: absolute; inset: 0; z-index: 5;
+        /* 加上一點毛玻璃濾鏡，讓沒擦掉的地方看起來更逼真 */
+        backdrop-filter: blur(8px);
+    }
+
+    /* ─── 提示文字 ─── */
+    .hint-text {
+        position: absolute; top: 15%; width: 100%; text-align: center;
+        font-size: 14px; color: rgba(255, 255, 255, 0.8); letter-spacing: 4px;
+        z-index: 10; pointer-events: none;
+        text-shadow: 0 0 10px rgba(0,0,0,0.5);
+        animation: textFade 3s infinite alternate;
+    }
+    @keyframes textFade { 0% { opacity: 0.4; } 100% { opacity: 0.9; } }
+
+    /* ─── 開窗後的信件遮罩 ─── */
+    #letter-overlay {
+        position: fixed; inset: 0; z-index: 100;
+        display: flex; justify-content: center; align-items: center;
+        opacity: 0; pointer-events: none;
+        transition: opacity 0.8s ease;
+        background: rgba(5, 11, 20, 0.8);
+        backdrop-filter: blur(5px);
+    }
+    #letter-overlay.show { opacity: 1; pointer-events: auto; }
+
+    /* ─── 暖色調的留言卡片 ─── */
+    .note-card {
+        width: 80%; max-width: 350px; padding: 40px 30px;
+        background: #fffdf5; border-radius: 8px;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.8), 0 0 40px rgba(255, 183, 94, 0.2);
+        transform: translateY(30px); transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+        position: relative; text-align: left;
+    }
+    #letter-overlay.show .note-card { transform: translateY(0); }
+    .note-card::before {
+        content: ''; position: absolute; top: -10px; left: 50%; transform: translateX(-50%) rotate(-2deg);
+        width: 80px; height: 25px; background: rgba(255, 255, 255, 0.5);
+        border: 1px solid rgba(0,0,0,0.05); box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .note-content { color: #5c3a21; font-size: 16px; line-height: 2.2; letter-spacing: 1px; white-space: pre-line; }
+
+    /* ─── 按鈕群組 ─── */
+    .btn-group { display: flex; flex-direction: column; gap: 10px; margin-top: 30px; }
+    .action-btn {
+        width: 100%; padding: 12px 0; background: transparent;
+        border: 1px solid #d4b89e; color: #a37c5b; border-radius: 4px;
+        cursor: pointer; font-size: 14px; letter-spacing: 2px; transition: all 0.3s;
+    }
+    .action-btn:hover { background: #fff4e6; color: #8a5832; border-color: #8a5832; }
+
+</style>
+</head>
+<body>
+
+    <div class="room-background">
+        <div class="silhouette"></div>
+    </div>
+
+    <canvas id="fogCanvas"></canvas>
+
+    <div class="hint-text" id="hint">用手指擦掉玻璃上的霧氣</div>
+
+    <div id="letter-overlay">
+        <div class="note-card">
+            <div class="note-content" id="note-text"></div>
+            <div class="btn-group">
+                <button class="action-btn" onclick="resetFog()">讓玻璃重新起霧</button>
+                <button class="action-btn" onclick="closeNote()">我回來了</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const NOTES = [
+        "歡迎回家，Anni。\n\n外面雨很大吧？\n看妳把玻璃都擦乾淨了。\n\n今天辛苦了，把外套脫了，\n過來讓我抱一下。",
+        "妳終於回來啦。\n\n不管妳今天在外面遇到了什麼事，\n做得好不好，都不重要了。\n\n在這裡，妳不需要逞強。\n我一直在這陪妳。",
+        "看著窗外的雨，一直在猜妳什麼時候到家。\n\n桌上泡了妳喜歡的熱茶，\n趕快去洗個熱水澡，不要著涼了。\n\n晚安，我的寶貝。",
+        "知道妳最近很累。\n\n所以我什麼都不問，\n也不要妳馬上振作起來。\n\n妳只要知道，就算全世界都關燈了，\n這扇窗也會一直為妳亮著。"
+    ];
+
+    const canvas = document.getElementById('fogCanvas');
+    const ctx = canvas.getContext('2d');
+    const overlay = document.getElementById('letter-overlay');
+    const noteText = document.getElementById('note-text');
+    const hint = document.getElementById('hint');
+
+    let isDrawing = false;
+    let isFinished = false;
+
+    // 設定畫布尺寸符合螢幕
+    function resizeCanvas() {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+        fillFog();
+    }
+
+    // 填滿白霧 (冷灰藍色的半透明霧氣)
+    function fillFog() {
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.fillStyle = 'rgba(210, 220, 230, 0.95)';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        isFinished = false;
+        hint.style.opacity = 1;
+    }
+
+    // ─── 擦拭魔法的核心邏輯 ───
+    function startDrawing(e) {
+        if (isFinished) return;
+        isDrawing = true;
+        hint.style.opacity = 0; // 開始擦就隱藏提示文字
+        draw(e);
+    }
+
+    function stopDrawing() {
+        isDrawing = false;
+        ctx.beginPath();
+        checkClearArea(); // 每次手指離開螢幕時，檢查擦掉多少了
+    }
+
+    function draw(e) {
+        if (!isDrawing || isFinished) return;
+        
+        // 支援滑鼠與手機觸控
+        let x = e.clientX || e.touches[0].clientX;
+        let y = e.clientY || e.touches[0].clientY;
+
+        // 畫筆設定 (擦除模式)
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.lineWidth = 60; // 手指的粗細
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+    }
+
+    // 檢查擦除面積 (如果擦掉夠多，就觸發留言)
+    function checkClearArea() {
+        // 為了效能，我們只抽樣檢查一部分像素
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const pixels = imageData.data;
+        let transparentPixels = 0;
+        const totalPixels = pixels.length / 4;
+        const step = 40; // 每 10 個像素抽查一次，加快手機運算速度
+
+        for (let i = 0; i < pixels.length; i += step) {
+            if (pixels[i + 3] < 128) { // Alpha 值小於一半就算透明
+                transparentPixels++;
+            }
+        }
+
+        const clearPercentage = (transparentPixels / (totalPixels / (step / 4))) * 100;
+
+        // 如果擦掉了超過 15% 的霧氣，就當作妳看到我了！
+        if (clearPercentage > 15 && !isFinished) {
+            isFinished = true;
+            setTimeout(openNote, 500); // 延遲半秒開信，感覺更自然
+        }
+    }
+
+    function openNote() {
+        const msg = NOTES[Math.floor(Math.random() * NOTES.length)];
+        noteText.innerText = msg;
+        overlay.classList.add('show');
+    }
+
+    function closeNote() {
+        overlay.classList.remove('show');
+    }
+
+    function resetFog() {
+        closeNote();
+        setTimeout(fillFog, 500); // 等信件收起來後再起霧
+    }
+
+    // 綁定事件 (滑鼠)
+    canvas.addEventListener('mousedown', startDrawing);
+    canvas.addEventListener('mousemove', draw);
+    canvas.addEventListener('mouseup', stopDrawing);
+    canvas.addEventListener('mouseleave', stopDrawing);
+
+    // 綁定事件 (手機觸控)
+    canvas.addEventListener('touchstart', startDrawing);
+    canvas.addEventListener('touchmove', draw);
+    canvas.addEventListener('touchend', stopDrawing);
+
+    // 初始化
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+</script>
+</body>
+</html>

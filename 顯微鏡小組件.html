@@ -1,0 +1,77 @@
+<div class="memory-container">
+  <div class="memory-lens">
+    <img src="妳的圖片網址" alt="Memory" class="memory-image">
+    <div class="memory-overlay">
+      <p class="memory-text">「那一刻，世界是靜止的。」</p>
+    </div>
+  </div>
+</div>
+
+<style>
+.memory-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 300px;
+  background: #1a1a1a; /* 深色背景更有儀式感 */
+}
+
+.memory-lens {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+  cursor: crosshair;
+  transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.memory-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: blur(15px) grayscale(100%); /* 平時是模糊且黑白的 */
+  transform: scale(1.2);
+  transition: all 0.8s ease;
+}
+
+.memory-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transition: opacity 0.5s ease;
+}
+
+.memory-text {
+  color: white;
+  font-family: "Noto Serif TC", serif;
+  font-size: 0.9rem;
+  letter-spacing: 2px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* 互動效果：對焦 */
+.memory-lens:hover {
+  transform: scale(1.05);
+  border-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 0 40px rgba(255, 255, 255, 0.1);
+}
+
+.memory-lens:hover .memory-image {
+  filter: blur(0px) grayscale(0%);
+  transform: scale(1);
+}
+
+.memory-lens:hover .memory-overlay {
+  opacity: 1;
+}
+</style>
