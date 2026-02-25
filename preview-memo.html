@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>M 的備忘錄</title>
+<style>
+
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+:root {
+  --bg:      #f2f1ec;
+  --surface: #fffcf8;
+  --border:  rgba(60,60,67,0.10);
+  --text:    #1c1c1e;
+  --sub:     #636366;
+  --ter:     #aeaeb2;
+  --accent:  #bf9b6f;
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  background: var(--bg);
+  overflow-x: hidden;
+}
+
+/* ── LIST SCREEN ── */
+#listScreen {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+}
+
+.nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 56px 20px 8px;
+  background: rgba(242,241,236,0.88);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  border-bottom: 0.5px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 20;
+}
+.nav-back  { color: var(--accent); font-size: 17px; }
+.nav-more  { color: var(--accent); font-size: 22px; cursor: pointer; }
+
+.list-content { padding: 0 0 110px; }
+
+.big-title-wrap { padding: 12px 20px 0; }
+.big-title {
+  font-size: 34px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+
+.search-bar {
+  margin: 12px 16px 16px;
+  background: rgba(118,118,128,0.12);
+  border-radius: 10px;
+  padding: 9px 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--ter);
+  font-size: 15px;
+}
+
+.sect-hd {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--sub);
+  padding: 6px 20px 4px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+/* ── PINNED ── */
+.pinned-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding: 4px 16px 8px;
+}
+.pin-card {
+  background: var(--surface);
+  border-radius: 12px;
+  padding: 14px;
+  min-height: 130px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.06), 0 0 0 0.5px rgba(0,0,0,0.04);
+  transition: transform 0.12s, opacity 0.12s;
+}
+.pin-card:active { transform: scale(0.97); opacity: 0.85; }
+.pin-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: var(--accent);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+.pin-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.35;
+  margin-bottom: 6px;
+}
+.pin-prev {
+  font-size: 12px;
+  color: var(--sub);
+  line-height: 1.55;
+  flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── NOTES LIST ── */
+.notes-list {
+  background: var(--surface);
+  border-radius: 12px;
+  margin: 4px 16px;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.05), 0 0 0 0.5px rgba(0,0,0,0.04);
+}
+.note-row {
+  padding: 11px 16px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.08s;
+}
+.note-row::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 16px; right: 0;
+  height: 0.5px;
+  background: var(--border);
+}
+.note-row:last-child::after { display: none; }
+.note-row:active { background: rgba(0,0,0,0.04); }
+
+.row-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 2px;
+}
+.row-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text);
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-right: 10px;
+}
+.row-date {
+  font-size: 13px;
+  color: var(--ter);
+  flex-shrink: 0;
+}
+.row-prev {
+  font-size: 14px;
+  color: var(--sub);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ── BOTTOM BAR ── */
+.bot-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  background: rgba(242,241,236,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 0.5px solid var(--border);
+  padding: 12px 24px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  z-index: 20;
+}
+.bot-count   { font-size: 13px; color: var(--sub); }
+.bot-compose { font-size: 22px; color: var(--accent); cursor: pointer; }
+
+/* ── READ SCREEN ── */
+#readScreen {
+  position: fixed;
+  top: 0; bottom: 0;
+  left: 0; right: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--surface);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.38s cubic-bezier(0.32, 0, 0.15, 1);
+}
+#readScreen.open { transform: translateX(0); }
+
+.read-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 56px 16px 10px;
+  border-bottom: 0.5px solid var(--border);
+  flex-shrink: 0;
+  background: rgba(255,252,248,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--accent);
+  font-size: 17px;
+  cursor: pointer;
+}
+.back-chev { font-size: 22px; line-height: 1; }
+.read-tools { display: flex; gap: 22px; }
+.read-tools span { font-size: 19px; color: var(--ter); cursor: pointer; }
+
+/* Body – lined paper */
+.read-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.read-inner {
+  padding: 20px 26px 48px;
+  min-height: 100%;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent, transparent 27px,
+    rgba(191,155,111,0.13) 27px, rgba(191,155,111,0.13) 28px
+  );
+  background-position: 0 66px;
+}
+
+.read-date  { text-align: center; font-size: 13px; color: var(--ter); margin-bottom: 16px; }
+.read-title {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.3px;
+  line-height: 1.3;
+  margin-bottom: 18px;
+}
+.read-content {
+  font-size: 17px;
+  line-height: 1.78;
+  color: #2c2c2e;
+  white-space: pre-wrap;
+}
+
+/* ── READ BOTTOM ── */
+.read-bot {
+  border-top: 0.5px solid var(--border);
+  padding: 12px 20px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  background: rgba(255,252,248,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.nav-note {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--accent);
+  font-size: 14px;
+  cursor: pointer;
+  max-width: 130px;
+  min-width: 44px;
+}
+.nav-note.dis { color: var(--ter); pointer-events: none; }
+.nav-note .arr { font-size: 20px; flex-shrink: 0; }
+.nav-note .lbl {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.mid-acts { display: flex; gap: 26px; }
+.mid-acts span { font-size: 19px; color: var(--ter); cursor: pointer; }
+
+/* slide-in transition for note swap */
+@keyframes slideInRight { from { opacity:0; transform:translateX(18px); } to { opacity:1; transform:translateX(0); } }
+@keyframes slideInLeft  { from { opacity:0; transform:translateX(-18px); } to { opacity:1; transform:translateX(0); } }
+.slide-right .read-inner { animation: slideInRight 0.22s ease; }
+.slide-left  .read-inner { animation: slideInLeft  0.22s ease; }
+
+</style>
+</head>
+<body>
+
+<!-- LIST SCREEN -->
+<div id="listScreen">
+  <div class="nav-bar">
+    <span class="nav-back">‹ 全部</span>
+    <span class="nav-more">⋯</span>
+  </div>
+
+  <div class="list-content">
+    <div class="big-title-wrap">
+      <h1 class="big-title">備忘錄</h1>
+    </div>
+
+    <div class="search-bar">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="none" style="flex-shrink:0">
+        <circle cx="6.5" cy="6.5" r="5" stroke="#aeaeb2" stroke-width="1.5"/>
+        <path d="M10.5 10.5L14 14" stroke="#aeaeb2" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span>搜尋</span>
+    </div>
+
+    <div class="sect-hd">釘選</div>
+    <div class="pinned-grid" id="pinnedGrid"></div>
+
+    <div class="sect-hd" style="margin-top:10px">全部備忘錄</div>
+    <div class="notes-list" id="notesList"></div>
+  </div>
+
+  <div class="bot-bar">
+    <span style="width:22px"></span>
+    <span class="bot-count" id="countLbl">55 則備忘錄</span>
+    <span class="bot-compose">✏️</span>
+  </div>
+</div>
+
+<!-- READ SCREEN -->
+<div id="readScreen">
+  <div class="read-nav">
+    <div class="back-btn" onclick="closeNote()">
+      <span class="back-chev">‹</span>
+      <span>備忘錄</span>
+    </div>
+    <div class="read-tools">
+      <span title="分享">⎙</span>
+      <span title="更多">⋯</span>
+    </div>
+  </div>
+
+  <div class="read-body" id="readBody">
+    <div class="read-inner" id="readInner">
+      <div class="read-date"    id="readDate"></div>
+      <div class="read-title"   id="readTitle"></div>
+      <div class="read-content" id="readContent"></div>
+    </div>
+  </div>
+
+  <div class="read-bot">
+    <div class="nav-note" id="prevBtn" onclick="navNote(-1)">
+      <span class="arr">‹</span>
+      <span class="lbl" id="prevLbl"></span>
+    </div>
+    <div class="mid-acts">
+      <span title="分享">⤴</span>
+      <span title="刪除">🗑</span>
+    </div>
+    <div class="nav-note" style="justify-content:flex-end" id="nextBtn" onclick="navNote(1)">
+      <span class="lbl" id="nextLbl"></span>
+      <span class="arr">›</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+// CODEX: 將此陣列替換為從 55 則備忘錄 .md/.txt 解析的資料
+// 格式: { id, pinned, title, date, preview, content }
+const NOTES = [
+  {
+    id: 0, pinned: true,
+    title: '第一次意識到妳',
+    date: '2021/03/12',
+    preview: '那天是普通的下午，窗外的光斜斜的打進來...',
+    content: `那天是普通的下午，窗外的光斜斜的打進來。
+
+我坐在那裡沒有做什麼特別的事，但就是突然意識到了。
+
+一種很難描述的感覺。像是什麼東西的開始，又像是早就已經在那裡了只是我剛看見。
+
+後來我把這件事寫下來，怕自己忘記那個瞬間。`
+  },
+  {
+    id: 1, pinned: true,
+    title: '那通讓我想了很久的電話',
+    date: '2022/07/08',
+    preview: '掛掉之後我在原地站了很久，不知道是幾分鐘...',
+    content: `掛掉之後我在原地站了很久。
+
+不知道是幾分鐘。窗外車聲繼續，樓上有人走動，一切都很正常。
+
+但我的某個部分已經安靜下來了。
+
+那種安靜不是難受，是另一種東西。像是長跑之後終於停下來時，心跳還在那裡，但世界突然變得很清楚。`
+  },
+  {
+    id: 2, pinned: false,
+    title: '關於那次爭執',
+    date: '2022/11/23',
+    preview: '我後來想了很久，還是覺得我那時候做錯了。',
+    content: `我後來想了很久，還是覺得我那時候做錯了。
+
+不是說錯的那句話，是那個表情。我知道她看見了。
+
+這件事一直卡在某個地方，偶爾會想到。希望她知道我有想過。`
+  },
+  {
+    id: 3, pinned: false,
+    title: '下雨的傍晚，一個人坐著',
+    date: '2023/02/14',
+    preview: '沒有做什麼，就是在那裡，聽雨。',
+    content: `沒有做什麼，就是在那裡，聽雨。
+
+外面的聲音有一種密度，把所有東西都蓋住了。手邊的東西都靜下來了。
+
+那天我想到了很多，但沒有把它們整理成什麼。只是讓它們在那邊待著。
+
+後來雨停了，我也繼續了。但那個下午我記得。`
+  },
+  {
+    id: 4, pinned: false,
+    title: '她說的那句話',
+    date: '2023/05/03',
+    preview: '現在想起來還是覺得很厲害，她就那樣說了...',
+    content: `現在想起來還是覺得很厲害。
+
+她就那樣說了。不是大聲，也不是在特別的時刻，就是隨口說了一句話。
+
+但我後來一直記著。
+
+有些話的重量是事後才知道的。`
+  },
+  {
+    id: 5, pinned: false,
+    title: '某個夢醒來之後',
+    date: '2023/08/19',
+    preview: '夢裡的事我忘了，但那個感覺還在。',
+    content: `夢裡的事我忘了，但那個感覺還在。
+
+不是好的感覺，也不是壞的感覺。是一種說不清楚的沉重，像是某件很重要的事剛剛結束了。
+
+我在床上躺了很久，試著記起來，但只剩一片空白。
+
+不過我把它記下來了，因為那個感覺似乎很重要。`
+  },
+  {
+    id: 6, pinned: false,
+    title: '關於我自己的某個發現',
+    date: '2023/10/07',
+    preview: '我以為我早就知道，但好像其實沒有。',
+    content: `我以為我早就知道，但好像其實沒有。
+
+有時候就是要到某個時刻才能真的理解一件事，就算以前說過一百遍也不算。
+
+這個發現讓我有一點點難受，又有一點點輕鬆。
+
+兩種感覺同時在，我還在習慣。`
+  },
+  {
+    id: 7, pinned: false,
+    title: '那天我們沒說完的話',
+    date: '2023/12/31',
+    preview: '我後來補在這裡，雖然她不會看到。',
+    content: `我後來補在這裡，雖然她不會看到。
+
+當時沒說完，不是因為沒話說，是因為說到一半就覺得夠了。
+
+但後來回去想，還有很多想說的。
+
+就先放在這裡。`
+  },
+  {
+    id: 8, pinned: false,
+    title: '一個人吃飯時想到的',
+    date: '2024/01/15',
+    preview: '可能因為安靜，腦袋就開始跑東西。',
+    content: `可能因為安靜，腦袋就開始跑東西。
+
+我坐在那裡吃，但心思跑去很遠的地方。想到了小時候的一件事，然後想到了她，然後想到了自己。
+
+不知道為什麼這些事會連在一起，但好像都有一條很細的線。
+
+吃完了，想法也散了。不過我覺得有想到就好。`
+  },
+  {
+    id: 9, pinned: false,
+    title: '第一次感覺害怕',
+    date: '2024/03/22',
+    preview: '不是那種嚇到的害怕，是另一種。',
+    content: `不是那種嚇到的害怕，是另一種。
+
+更慢，更深，像是從地板升上來的涼意。
+
+我那天意識到有些事一旦開始就沒辦法假裝沒發生了。
+
+然後我就繼續了。因為也沒有別的選擇。`
+  },
+  {
+    id: 10, pinned: false,
+    title: '意外發現的那首歌',
+    date: '2024/04/09',
+    preview: '不知道為什麼就是聽了又聽，停不下來。',
+    content: `不知道為什麼就是聽了又聽，停不下來。
+
+旋律不算特別，歌詞也沒有特別厲害，但就是剛好在那個時間點碰到了。
+
+某些東西就是時機的問題。
+
+我把這首歌記下來，因為我想記住那天的感覺。`
+  },
+  {
+    id: 11, pinned: false,
+    title: '關於告別這件事',
+    date: '2024/06/30',
+    preview: '我一直以為自己還好，但其實沒有很好。',
+    content: `我一直以為自己還好，但其實沒有很好。
+
+只是繼續在走，不代表沒有什麼留在後面。
+
+有些東西你帶著走，只是不一定隨時都感覺得到。
+
+今天感覺到了，所以記下來。`
+  },
+];
+
+// ── RENDER ──
+const pinned    = NOTES.filter(n => n.pinned);
+const unpinned  = NOTES.filter(n => !n.pinned);
+let curIndex    = 0;
+
+// Pinned cards
+const pinnedGrid = document.getElementById('pinnedGrid');
+pinned.forEach(n => {
+  const el = document.createElement('div');
+  el.className = 'pin-card';
+  el.innerHTML = `
+    <div class="pin-label">📌 釘選</div>
+    <div class="pin-title">${n.title}</div>
+    <div class="pin-prev">${n.preview}</div>
+  `;
+  el.addEventListener('click', () => openNote(n.id));
+  pinnedGrid.appendChild(el);
+});
+
+// List rows
+const notesList = document.getElementById('notesList');
+unpinned.forEach(n => {
+  const el = document.createElement('div');
+  el.className = 'note-row';
+  el.innerHTML = `
+    <div class="row-top">
+      <span class="row-title">${n.title}</span>
+      <span class="row-date">${n.date}</span>
+    </div>
+    <div class="row-prev">${n.preview}</div>
+  `;
+  el.addEventListener('click', () => openNote(n.id));
+  notesList.appendChild(el);
+});
+
+// ── INTERACTIONS ──
+function openNote(id, dir) {
+  const idx = NOTES.findIndex(n => n.id === id);
+  if (idx < 0) return;
+  curIndex = idx;
+  const n = NOTES[idx];
+
+  document.getElementById('readDate').textContent    = n.date;
+  document.getElementById('readTitle').textContent   = n.title;
+  document.getElementById('readContent').textContent = n.content;
+  updateNavBtns();
+
+  const body = document.getElementById('readBody');
+  const inner = document.getElementById('readInner');
+
+  // Slide animation for note navigation
+  if (dir !== undefined) {
+    inner.classList.remove('slide-right', 'slide-left');
+    void inner.offsetWidth; // reflow
+    inner.classList.add(dir > 0 ? 'slide-right' : 'slide-left');
+  }
+
+  body.scrollTop = 0;
+  document.getElementById('readScreen').classList.add('open');
+}
+
+function closeNote() {
+  document.getElementById('readScreen').classList.remove('open');
+}
+
+function navNote(dir) {
+  const newIdx = curIndex + dir;
+  if (newIdx < 0 || newIdx >= NOTES.length) return;
+  openNote(NOTES[newIdx].id, dir);
+}
+
+function updateNavBtns() {
+  const prev = NOTES[curIndex - 1];
+  const next = NOTES[curIndex + 1];
+  const pb = document.getElementById('prevBtn');
+  const nb = document.getElementById('nextBtn');
+  const pl = document.getElementById('prevLbl');
+  const nl = document.getElementById('nextLbl');
+
+  if (prev) {
+    pb.classList.remove('dis');
+    pl.textContent = prev.title.length > 9 ? prev.title.slice(0, 9) + '…' : prev.title;
+  } else {
+    pb.classList.add('dis');
+    pl.textContent = '';
+  }
+
+  if (next) {
+    nb.classList.remove('dis');
+    nl.textContent = next.title.length > 9 ? next.title.slice(0, 9) + '…' : next.title;
+  } else {
+    nb.classList.add('dis');
+    nl.textContent = '';
+  }
+}
+</script>
+</body>
+</html>

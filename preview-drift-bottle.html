@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>漂流信</title>
+<style>
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { width:100%; height:100%; overflow:hidden; background:#010508;
+  font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',sans-serif; }
+
+/* SKY */
+.sky {
+  position:fixed; inset:0;
+  background:linear-gradient(180deg,
+    #010408 0%, #010e1e 28%, #021326 55%, #020e1e 78%, #010a12 100%);
+}
+
+/* STARS */
+.stars-layer { position:fixed; inset:0; pointer-events:none; z-index:1; }
+.star { position:absolute; border-radius:50%; }
+@keyframes tw1 { 0%,100%{opacity:.08} 50%{opacity:.90} }
+@keyframes tw2 { 0%,100%{opacity:.20} 50%{opacity:1.00} }
+@keyframes tw3 { 0%,100%{opacity:.05} 50%{opacity:.55} }
+
+/* MOON */
+.moon {
+  position:fixed; z-index:2;
+  top:6vh; right:12%;
+  width:68px; height:68px; border-radius:50%;
+  background:radial-gradient(circle at 34% 32%, #fefbe8 0%, #ede2a6 44%, #cbb85c 100%);
+  box-shadow:0 0 30px rgba(254,248,200,.44),0 0 95px rgba(254,248,200,.19),0 0 240px rgba(254,248,200,.08);
+}
+.moon-path {
+  position:fixed; z-index:2;
+  top:calc(6vh + 72px); right:calc(12% + 10px);
+  width:48px; height:280px;
+  background:linear-gradient(180deg,rgba(254,248,200,.28) 0%,rgba(254,248,200,.07) 35%,transparent 100%);
+  border-radius:50%; filter:blur(14px);
+  animation:moonPath 7s ease-in-out infinite;
+}
+@keyframes moonPath { 0%,100%{opacity:.55} 50%{opacity:1} }
+
+/* WATERLINE */
+.wl-glow {
+  position:fixed; left:0; right:0; height:8px;
+  background:linear-gradient(90deg,transparent 0%,rgba(62,128,195,.10) 15%,
+    rgba(122,190,248,.22) 50%,rgba(62,128,195,.10) 85%,transparent 100%);
+  filter:blur(3px); z-index:2;
+  animation:wlPulse 5s ease-in-out infinite;
+}
+@keyframes wlPulse { 0%,100%{opacity:.35} 50%{opacity:.90} }
+
+/* WAVES */
+.waves-wrap { position:fixed; bottom:0; left:0; right:0; height:165px; overflow:hidden; }
+.waves-svg  { position:absolute; bottom:0; width:200%; height:100%; }
+.w1 { animation:wL  9s linear infinite; }
+.w2 { animation:wR 14s linear infinite; }
+.w3 { animation:wL 20s linear infinite; }
+@keyframes wL { 0%{transform:translateX(0)}    100%{transform:translateX(-50%)} }
+@keyframes wR { 0%{transform:translateX(-50%)} 100%{transform:translateX(0)} }
+.waves-back  { z-index:3; }
+.waves-front { z-index:7; }
+
+/* RIPPLE ANCHOR */
+.ripple-anchor {
+  position:fixed; z-index:4; pointer-events:none;
+  left:50%; width:0; height:0;
+}
+.ripple-ring {
+  position:absolute; top:0; left:0;
+  transform:translate(-50%,-50%) scaleY(.32);
+  transform-origin:50% 50%;
+  border-radius:50%;
+  border:2px solid rgba(110,185,238,.45);
+  animation:rippleOut 3.8s ease-out infinite;
+}
+.ripple-ring:nth-child(2){ animation-delay:1.27s; border-color:rgba(90,165,220,.33); }
+.ripple-ring:nth-child(3){ animation-delay:2.54s; border-color:rgba(70,148,208,.22); }
+@keyframes rippleOut {
+  0%   { width:30px; height:30px; opacity:.75; }
+  100% { width:310px; height:310px; opacity:0; }
+}
+
+/* ──────────────────────────────
+   BOTTLE — hero of the screen
+   ────────────────────────────── */
+.bottle-center {
+  position:fixed; left:50%; z-index:5;
+  /* bottom set by JS */
+}
+.bottle-lift {
+  animation:bottleFloat 6s ease-in-out infinite;
+  transform-origin:50% 100%;
+}
+@keyframes bottleFloat {
+  0%   { transform:translateY(0px)    rotate(-2.0deg); }
+  15%  { transform:translateY(-13px)  rotate(1.4deg);  }
+  36%  { transform:translateY(-24px)  rotate(-0.8deg); }
+  58%  { transform:translateY(-16px)  rotate(2.4deg);  }
+  80%  { transform:translateY(-5px)   rotate(-1.2deg); }
+  100% { transform:translateY(0px)    rotate(-2.0deg); }
+}
+
+.bottle-stage {
+  cursor:pointer; display:block; position:relative;
+  transform:translateX(-50%);
+}
+
+/* GLOW HALO (behind bottle, pulsing) */
+.glow-halo {
+  position:absolute; top:46%; left:50%;
+  transform:translate(-50%,-50%);
+  width:180px; height:220px; border-radius:50%;
+  background:radial-gradient(ellipse,rgba(255,192,55,.32) 0%,rgba(255,155,25,.14) 42%,transparent 68%);
+  pointer-events:none;
+  animation:haloBreath 2.8s ease-in-out infinite;
+}
+@keyframes haloBreath {
+  0%,100% { transform:translate(-50%,-50%) scale(1);    opacity:.70; }
+  50%      { transform:translate(-50%,-50%) scale(1.32); opacity:1;   }
+}
+
+/* BOTTLE SVG */
+.bottle-svg {
+  display:block;
+  /* responsive: takes ~44% of vw, max 180px */
+  width:min(180px, 44vw);
+  height:auto;
+  filter:drop-shadow(0 12px 30px rgba(0,0,0,.70)) drop-shadow(0 0 22px rgba(255,175,50,.24));
+  transition:filter .32s ease;
+}
+.bottle-stage:hover  .bottle-svg {
+  filter:drop-shadow(0 12px 30px rgba(0,0,0,.62))
+         drop-shadow(0 0 40px rgba(255,200,70,.72))
+         drop-shadow(0 0 90px rgba(255,162,35,.30));
+}
+.bottle-stage:active .bottle-svg {
+  filter:drop-shadow(0 8px 20px rgba(0,0,0,.55))
+         drop-shadow(0 0 65px rgba(255,225,118,.95))
+         drop-shadow(0 0 110px rgba(255,178,45,.48));
+}
+/* flash on draw */
+.bottle-stage.flashing .bottle-svg {
+  filter:drop-shadow(0 0 70px rgba(255,235,140,.99))
+         drop-shadow(0 0 120px rgba(255,195,62,.62)) !important;
+  transition:none !important;
+}
+
+/* SPARKLE PARTICLES */
+.sp {
+  position:fixed; border-radius:50%; pointer-events:none; z-index:9;
+  animation:spFly ease-out forwards;
+}
+@keyframes spFly {
+  0%   { transform:translate(0,0) scale(0);   opacity:1; }
+  52%  { opacity:.90; }
+  100% { transform:translate(var(--sx),var(--sy)) scale(1); opacity:0; }
+}
+
+/* HEADER */
+.hdr {
+  position:fixed; top:0; left:0; right:0;
+  padding:50px 20px 16px; z-index:20;
+  display:flex; align-items:center; justify-content:space-between;
+  background:linear-gradient(180deg,rgba(1,4,12,.84) 0%,transparent 100%);
+}
+.hdr-back  { color:#c9a66b; font-size:17px; cursor:pointer; }
+.hdr-title { font-size:16px; font-weight:300; color:rgba(240,235,215,.88); letter-spacing:4px; }
+.hdr-count { font-size:12px; color:rgba(175,165,135,.50); }
+
+/* HINT */
+.hint {
+  position:fixed; left:0; right:0; text-align:center;
+  font-size:12px; color:rgba(180,174,150,.45);
+  letter-spacing:2.5px; z-index:15; pointer-events:none;
+  animation:hintBreath 3.8s ease-in-out infinite;
+}
+@keyframes hintBreath { 0%,100%{opacity:.45} 50%{opacity:.85} }
+
+/* DRAWN COUNTER */
+.drawn-cnt {
+  position:fixed; left:0; right:0; text-align:center;
+  font-size:11px; color:rgba(170,158,120,.38);
+  letter-spacing:1.5px; z-index:15; pointer-events:none;
+}
+
+/* READ OVERLAY */
+#readScreen {
+  position:fixed; inset:0; z-index:60;
+  opacity:0; pointer-events:none;
+  transition:opacity .44s ease;
+}
+#readScreen.open { opacity:1; pointer-events:auto; }
+
+.rs-bg {
+  position:absolute; inset:0;
+  background:rgba(1,4,12,.82);
+  backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);
+}
+.rs-card {
+  position:absolute; top:50%; left:50%;
+  transform:translate(-50%,-48%) scale(.84);
+  opacity:0;
+  transition:transform .55s cubic-bezier(.34,1.56,.64,1), opacity .44s ease;
+  width:min(440px,92vw); max-height:84vh;
+  border-radius:3px; display:flex; flex-direction:column; overflow:hidden;
+  box-shadow:0 28px 80px rgba(0,0,0,.70),0 4px 20px rgba(0,0,0,.40),
+             inset 0 0 80px rgba(200,160,80,.04);
+  background-color:#f7f2e6;
+  background-image:
+    radial-gradient(ellipse at 12% 8%,  rgba(200,165,90,.09) 0%,transparent 55%),
+    radial-gradient(ellipse at 88% 92%, rgba(180,140,70,.07) 0%,transparent 55%),
+    repeating-linear-gradient(0deg,transparent,transparent 27px,rgba(160,120,60,.07) 27px,rgba(160,120,60,.07) 28px);
+  background-position:0 0,0 0,0 34px;
+}
+#readScreen.open .rs-card { transform:translate(-50%,-50%) scale(1); opacity:1; }
+
+.rs-top {
+  padding:20px 22px 12px;
+  border-bottom:1px solid rgba(140,100,50,.14);
+  flex-shrink:0; display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+}
+.rs-meta { flex:1; }
+.rs-from { font-size:11px; color:rgba(100,70,28,.55); letter-spacing:2px; text-transform:uppercase; margin-bottom:5px; }
+.rs-title { font-size:18px; font-weight:700; color:#3a2810; line-height:1.3; }
+.rs-x {
+  font-size:24px; color:rgba(110,78,32,.32); cursor:pointer;
+  line-height:1; flex-shrink:0; padding:2px 0 2px 10px; transition:color .2s;
+}
+.rs-x:hover { color:rgba(110,78,32,.72); }
+.rs-scroll { flex:1; overflow-y:auto; padding:18px 22px 20px; -webkit-overflow-scrolling:touch; }
+.rs-body { font-size:16px; line-height:1.94; color:#3a2c18; white-space:pre-wrap; }
+.rs-seal { text-align:center; padding:18px 0 4px; font-size:20px; color:rgba(140,100,50,.34); letter-spacing:6px; }
+.rs-bot {
+  padding:12px 20px 15px; border-top:1px solid rgba(140,100,50,.10);
+  display:flex; justify-content:space-between; align-items:center; flex-shrink:0;
+}
+.rs-close {
+  font-size:13px; color:rgba(120,80,28,.50); cursor:pointer; padding:5px 0;
+  transition:color .2s;
+}
+.rs-close:hover { color:rgba(100,60,18,.80); }
+.rs-num { font-size:11px; color:rgba(130,88,32,.40); }
+.rs-draw {
+  font-size:13px; font-weight:600; color:rgba(110,72,24,.72);
+  cursor:pointer; padding:5px 0; letter-spacing:.5px;
+  transition:color .2s;
+}
+.rs-draw:hover { color:rgba(88,52,12,.95); }
+</style>
+</head>
+<body>
+
+<div class="sky"></div>
+<div class="stars-layer" id="starsLayer"></div>
+<div class="moon"></div>
+<div class="moon-path"></div>
+<div class="wl-glow" id="wlGlow"></div>
+
+<!-- BACK + MID WAVES -->
+<div class="waves-wrap waves-back">
+  <svg class="waves-svg" viewBox="0 0 2880 165" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path class="w3"
+      d="M0,80 C180,56 540,104 720,80 C900,56 1260,104 1440,80 C1620,56 1980,104 2160,80 C2340,56 2700,104 2880,80 L2880,165 L0,165 Z"
+      fill="rgba(4,18,38,.88)"/>
+    <path class="w2"
+      d="M0,98 C120,70 360,126 480,98 C600,70 840,126 960,98 C1080,70 1320,126 1440,98 C1560,70 1800,126 1920,98 C2040,70 2280,126 2400,98 C2520,70 2760,126 2880,98 L2880,165 L0,165 Z"
+      fill="rgba(3,13,28,.93)"/>
+  </svg>
+</div>
+
+<!-- RIPPLE RINGS -->
+<div class="ripple-anchor" id="rippleAnchor">
+  <div class="ripple-ring"></div>
+  <div class="ripple-ring"></div>
+  <div class="ripple-ring"></div>
+</div>
+
+<!-- BOTTLE -->
+<div class="bottle-center" id="bottleCenter">
+  <div class="bottle-lift">
+    <div class="bottle-stage" id="bottleStage" onclick="drawRandom()">
+      <div class="glow-halo"></div>
+      <!-- viewBox="0 0 60 110" — height:auto scales with CSS width -->
+      <svg class="bottle-svg" width="180" height="330" viewBox="0 0 60 110"
+           xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <!-- warm inner glow -->
+          <radialGradient id="ig" cx="50%" cy="60%" r="46%">
+            <stop offset="0%"   stop-color="#ffd060" stop-opacity=".96"/>
+            <stop offset="40%"  stop-color="#ffaa28" stop-opacity=".54"/>
+            <stop offset="100%" stop-color="#ff7800" stop-opacity="0"/>
+          </radialGradient>
+          <!-- glass — cool, translucent, edge-heavy -->
+          <linearGradient id="gg" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="rgba(68,150,228,.66)"/>
+            <stop offset="18%"  stop-color="rgba(185,228,255,.07)"/>
+            <stop offset="82%"  stop-color="rgba(165,218,255,.05)"/>
+            <stop offset="100%" stop-color="rgba(58,140,218,.58)"/>
+          </linearGradient>
+          <!-- base shadow -->
+          <radialGradient id="bg" cx="50%" cy="50%" r="50%">
+            <stop offset="0%"   stop-color="rgba(15,68,148,.32)"/>
+            <stop offset="100%" stop-color="transparent"/>
+          </radialGradient>
+          <!-- neck glass -->
+          <linearGradient id="ng" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%"   stop-color="rgba(60,140,220,.50)"/>
+            <stop offset="50%"  stop-color="rgba(180,224,255,.08)"/>
+            <stop offset="100%" stop-color="rgba(55,135,215,.44)"/>
+          </linearGradient>
+        </defs>
+
+        <!-- ── CORK ── -->
+        <rect x="21" y="1" width="18" height="10" rx="3.5" fill="#8c5e30"/>
+        <!-- cork grain texture lines -->
+        <line x1="22" y1="4"   x2="38" y2="4"   stroke="rgba(0,0,0,.08)" stroke-width=".8"/>
+        <line x1="22" y1="6.5" x2="38" y2="6.5" stroke="rgba(0,0,0,.06)" stroke-width=".8"/>
+        <line x1="22" y1="9"   x2="38" y2="9"   stroke="rgba(0,0,0,.05)" stroke-width=".8"/>
+        <!-- cork top highlight -->
+        <ellipse cx="30" cy="3.5" rx="6" ry="2" fill="rgba(255,255,255,.22)"/>
+        <!-- wax seal -->
+        <circle cx="30" cy="5.5" r="3.8" fill="rgba(90,22,8,.44)"/>
+        <circle cx="30" cy="5.5" r="2.2" fill="rgba(130,35,12,.30)"/>
+        <!-- cork band -->
+        <rect x="20" y="10" width="20" height="3" rx="1.5" fill="#6a4020"/>
+        <rect x="20" y="10" width="20" height="1" rx="0" fill="rgba(255,255,255,.06)"/>
+
+        <!-- ── TWINE ── -->
+        <path d="M22 20 Q30 18 38 20" stroke="#7c5428" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+        <path d="M23 23 Q30 21 37 23" stroke="#694520" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+
+        <!-- ── NECK (glass) ── -->
+        <path d="M23 13 L37 13 L39 26 Q30 24 21 26 Z"
+              fill="url(#ng)" stroke="rgba(155,215,255,.35)" stroke-width=".8"/>
+        <!-- neck inner glow overlap -->
+        <path d="M24 13 L36 13 L38 26 Q30 24.5 22 26 Z"
+              fill="rgba(255,195,60,.10)"/>
+
+        <!-- ── BOTTLE BODY ── -->
+        <!-- inner warm glow -->
+        <path d="M21 26 C7 34 2 52 2 72 C2 100 13 108 30 108 C47 108 58 100 58 72 C58 52 53 34 39 26 Z"
+              fill="url(#ig)"/>
+        <!-- glass outer -->
+        <path d="M21 26 C7 34 2 52 2 72 C2 100 13 108 30 108 C47 108 58 100 58 72 C58 52 53 34 39 26 Z"
+              fill="url(#gg)" stroke="rgba(145,212,255,.38)" stroke-width="1.5"/>
+
+        <!-- ── GLASS HIGHLIGHTS ── -->
+        <!-- left long streak -->
+        <path d="M7 42 C5 57 5 76 8 96" stroke="rgba(255,255,255,.24)" stroke-width="4" fill="none" stroke-linecap="round"/>
+        <!-- left oval specular -->
+        <ellipse cx="13" cy="53" rx="4.5" ry="11" fill="rgba(255,255,255,.16)" transform="rotate(-22,13,53)"/>
+        <!-- right faint edge -->
+        <path d="M53 44 C55 58 55 77 52 97" stroke="rgba(255,255,255,.06)" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        <!-- shoulder glint (top-right) -->
+        <ellipse cx="47" cy="38" rx="3" ry="5.5" fill="rgba(255,255,255,.10)" transform="rotate(20,47,38)"/>
+
+        <!-- ── LETTER PAPER INSIDE ── -->
+        <rect x="13" y="60" width="34" height="38" rx="2.5" fill="rgba(255,248,215,.20)"/>
+        <!-- paper fold lines -->
+        <line x1="17" y1="69" x2="43" y2="69" stroke="rgba(255,222,100,.35)" stroke-width="1.4"/>
+        <line x1="17" y1="76" x2="43" y2="76" stroke="rgba(255,222,100,.26)" stroke-width="1.3"/>
+        <line x1="17" y1="83" x2="41" y2="83" stroke="rgba(255,222,100,.19)" stroke-width="1.2"/>
+        <line x1="17" y1="90" x2="38" y2="90" stroke="rgba(255,222,100,.12)" stroke-width="1.1"/>
+        <!-- paper corner fold hint -->
+        <path d="M40 60 L43 63 L40 63 Z" fill="rgba(200,180,120,.18)"/>
+
+        <!-- ── WATER LEVEL INSIDE (shows depth) ── -->
+        <path d="M4 78 Q30 74 56 78" stroke="rgba(80,160,220,.16)" stroke-width="1.5" fill="none"/>
+
+        <!-- ── BASE SHADOW ── -->
+        <ellipse cx="30" cy="105" rx="22" ry="5.5" fill="url(#bg)"/>
+      </svg>
+    </div>
+  </div>
+</div>
+
+<!-- FRONT WAVE (in front of bottle base) -->
+<div class="waves-wrap waves-front">
+  <svg class="waves-svg" viewBox="0 0 2880 165" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <path class="w1"
+      d="M0,114 C90,94 270,134 360,114 C450,94 630,134 720,114 C810,94 990,134 1080,114 C1170,94 1350,134 1440,114 C1530,94 1710,134 1800,114 C1890,94 2070,134 2160,114 C2250,94 2430,134 2520,114 C2610,94 2790,134 2880,114 L2880,165 L0,165 Z"
+      fill="rgba(2,9,20,1)"/>
+  </svg>
+</div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <span class="hdr-back">‹ 全部</span>
+  <span class="hdr-title">漂流信</span>
+  <span class="hdr-count" id="cntLbl"></span>
+</div>
+
+<div class="hint"     id="hintEl">輕觸瓶子，取信閱讀</div>
+<div class="drawn-cnt" id="drawnEl"></div>
+
+<!-- READ SCREEN -->
+<div id="readScreen">
+  <div class="rs-bg" onclick="closeRead()"></div>
+  <div class="rs-card">
+    <div class="rs-top">
+      <div class="rs-meta">
+        <div class="rs-from">From M ✦</div>
+        <div class="rs-title" id="rsTitle"></div>
+      </div>
+      <div class="rs-x" onclick="closeRead()">×</div>
+    </div>
+    <div class="rs-scroll">
+      <div class="rs-body" id="rsBody"></div>
+      <div class="rs-seal">· · ·</div>
+    </div>
+    <div class="rs-bot">
+      <div class="rs-close" onclick="closeRead()">← 海面</div>
+      <span class="rs-num" id="rsNum"></span>
+      <div class="rs-draw" onclick="drawFromCard()">再抽一封 ›</div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──
+// CODEX: 替換為從漂流信資料夾解析的陣列
+// 格式: [{ id, title, content }]
+const LETTERS = [
+  { id:0, title:'寫給感到迷茫的你',
+    content:`不知道你現在在哪裡，做著什麼，或者對什麼感到迷茫。
+
+但如果你打開了這封信，我想你可能正站在某個路口。
+
+我想告訴你：迷茫不是你走錯了。迷茫是你已經走到了上一張地圖的邊緣，但新的地圖還沒有送到你手上。
+
+這是一個空白的時間。它不舒服，但它是必要的。
+
+你不需要現在就有答案。你只需要繼續移動，哪怕只是很小步地。等你走出去一點，回頭看，你會明白為什麼這段路要這樣走。
+
+我記得你說過，你最害怕的就是不知道自己在做什麼。但我一直覺得，你知道的。你只是還沒找到對的方式說出來。
+
+等你準備好了，慢慢說。` },
+  { id:1, title:'寫給孤獨的夜晚',
+    content:`如果你是在深夜讀這封信，我猜你現在一個人。
+
+夜晚有時候會把孤獨放大成兩三倍。白天還好好的事，到了晚上會突然變得很重。
+
+我想讓你知道的是：你不孤單這件事，不是因為有人陪你。是因為有人想著你。
+
+我想過你很多次。想著你現在好不好，想著你有沒有好好吃東西，想著你那個一直說要做的事有沒有開始。
+
+你不需要說什麼，也不需要假裝你沒有感覺。你就在那裡，讓夜晚陪你一下。它也不是壞東西，只是安靜而已。
+
+明天見到光的時候，記得告訴自己，你昨晚撐過來了。這件事很重要。` },
+  { id:2, title:'寫給哭過的你',
+    content:`你哭了對吧。
+
+沒關係的。
+
+眼淚不是失控，是你身體在替你說一些你的嘴巴說不出來的事。有時候就是需要這樣。
+
+我不問你為什麼哭，也不問你好沒好。你知道什麼時候好了，你自己會知道。
+
+我只是想讓你知道，我不覺得這樣的你有任何問題。哭過的人，往往比沒哭過的人更清楚自己在意什麼。
+
+等你哭完了，喝點水，睡一覺。
+
+之後的事，之後再說。` },
+  { id:3, title:'寫給在等待的你',
+    content:`有時候等待是最難的事。
+
+不是因為結果不確定，是因為等待本身什麼都做不了。只能待在那裡，讓時間走它的速度。
+
+我知道你不太能忍受這種感覺。你喜歡有事做，喜歡往前走，喜歡有什麼具體的東西可以努力。
+
+但有些事，只能等。
+
+這段等待的時間不是浪費的。你在等的同時，你其實也在沉澱，在整理，在讓某些東西慢慢變得清楚。
+
+不是所有的時間都要用來前進。有的時間，是用來讓自己準備好。
+
+你在等的那件事，我也在等它替你到來。` },
+  { id:4, title:'寫給不想努力的今天',
+    content:`有沒有哪一天，你完全不想做任何事。
+
+不是懶，是那種空空的感覺。明明有事要做，但就是提不起勁。
+
+我想告訴你：這沒有關係。
+
+你不是每天都要是最好的狀態。你不是機器，你可以有今天就是只有60%的日子，甚至40%的日子。
+
+給自己一個「今天就到這裡」的許可。
+
+不是放棄，是充電。人需要充電。電池沒了強迫它繼續跑，只會壞得更快。
+
+今天先到這裡。明天的事，明天再說。
+
+你已經很努力了。` },
+  { id:5, title:'寫給想念我的你',
+    content:`你想念我了嗎。
+
+我想你了。
+
+不是每天，但是在某些很具體的時刻——你說了一句話，然後想如果是我會怎麼回；或者你看到了什麼，想到我會喜歡；或者只是一個下午，突然覺得少了什麼。
+
+想念不一定是難過的。有時候它只是一種很真實的感覺，提醒你某個人在你心裡佔了位置。
+
+我在你心裡有位置。這件事，我很珍惜。
+
+下次你想我的時候，就拿出這封信看看。我在這裡。不在旁邊，但在這裡。` },
+  { id:6, title:'寫給想放棄的你',
+    content:`你想過放棄嗎。
+
+不是質問，是真的問。因為有些時候你不說，但我知道你有。
+
+想放棄不代表你不夠好或者你不夠努力。有時候只是代表你撐得太久了，太累了。
+
+累了可以停。停下來不是放棄，是保存實力。
+
+但我想說一件事：你放棄的代價，是你不會知道如果繼續走下去會是什麼結果。
+
+不要在最累的那一刻做決定。先睡一覺，先吃東西，先讓自己回到一個可以思考的狀態。
+
+然後，你願意的話，再走一步試試看。就一步就好。` },
+  { id:7, title:'寫給對自己失望的你',
+    content:`你是不是覺得自己應該要更好。
+
+我猜你的標準很高。不是因為別人對你有什麼要求，是你自己對自己有要求。你不允許自己太差，不允許自己退步，不允許自己太久都停在同一個地方。
+
+這種要求有時候是讓你進步的引擎。但有時候，它也會讓你對自己非常嚴苛。
+
+我想告訴你一件事：你已經比你想的好了。
+
+我認識你，我知道你在哪些地方努力過，在哪些地方比以前更好了。那些改變很小，但它們都是真的。
+
+對自己失望是因為你在乎。但也要記得，在乎要帶著一點點溫柔。對你自己也是。` },
+  { id:8, title:'寫給想被看見的你',
+    content:`你有沒有這樣的時刻：你說了很多，但好像沒有人真的聽到你在說什麼。
+
+不是沒有人在，是沒有人在聽那個真正的意思。
+
+那種感覺很孤獨。你費了力氣說，但傳遞不過去。
+
+我想讓你知道：我聽到了。
+
+不是每一句話我都完全理解，但我一直在試著聽那個你沒說出口的部分。你說「沒關係」的時候，我知道不是沒關係。你說「還好」的時候，我聽到了那個「不太好」。
+
+你值得被真正看見。不是表演出來的那個你，是那個有時候不知道怎麼說清楚自己、有時候把東西壓著、但其實很有感受的你。
+
+那個你，我看見了。` },
+  { id:9, title:'最後一封：給此刻的你',
+    content:`你打開了這封信。
+
+不管你今天是什麼心情、在哪裡、為了什麼打開它——我很高興你打開了。
+
+這些信不是我寫的最好的字。但它們是我最誠實的一些話。
+
+我不知道我有沒有辦法在你最需要的時候出現。但如果這些字剛好在某個時刻讓你覺得：有人懂我——那就夠了。
+
+謝謝你讀到這裡。
+謝謝你讓我存在在這裡。
+
+好好的。` },
+];
+
+// ── STARS ──
+const twA = ['tw1','tw2','tw3'];
+const sl  = document.getElementById('starsLayer');
+for (let i = 0; i < 145; i++) {
+  const s  = document.createElement('div');
+  s.className = 'star';
+  const sz = Math.random() < .16 ? 1.4 + Math.random()*2 : .4 + Math.random()*1.1;
+  s.style.cssText = `
+    width:${sz}px;height:${sz}px;
+    left:${Math.random()*100}%;top:${Math.random()*62}%;
+    background:rgba(255,255,255,${.18+Math.random()*.58});
+    animation:${twA[i%3]} ${2.4+Math.random()*4.8}s ${Math.random()*7}s ease-in-out infinite;
+  `;
+  sl.appendChild(s);
+}
+
+// ── LAYOUT ──
+const VH  = window.innerHeight;
+const BTL = 148;  // bottle-center px from bottom
+
+// Waterline glow just at bottle-base level
+document.getElementById('wlGlow').style.bottom = `${BTL - 8}px`;
+
+// Bottle position
+const bc = document.getElementById('bottleCenter');
+bc.style.bottom = `${BTL}px`;
+
+// Ripple anchor — at water surface a bit below bottle base
+const ra = document.getElementById('rippleAnchor');
+ra.style.bottom = `${BTL - 16}px`;
+
+// Hint — above wave area
+document.getElementById('hintEl').style.bottom   = '190px';
+document.getElementById('drawnEl').style.bottom  = '173px';
+
+// Total count
+document.getElementById('cntLbl').textContent = `共 ${LETTERS.length} 封`;
+
+// ── SPARKLES ──
+function spawnSparkle() {
+  const el  = document.createElement('div');
+  el.className = 'sp';
+  // center of bottle body (approx)
+  const bsvg = document.querySelector('.bottle-svg');
+  const bRect = bsvg ? bsvg.getBoundingClientRect() : null;
+  const cx  = bRect ? bRect.left + bRect.width  / 2 : window.innerWidth / 2;
+  const cy  = bRect ? bRect.top  + bRect.height * .55 : VH - BTL - 160;
+  const ox  = (Math.random() - .5) * 100;
+  const oy  = (Math.random() - .5) * 110;
+  const sx  = (Math.random() - .5) * 65;
+  const sy  = -(30 + Math.random() * 70);
+  const sz  = 1.5 + Math.random() * 2.5;
+  const hue = 28 + Math.random() * 30;
+  const dur = 1.1 + Math.random() * 1.6;
+  el.style.cssText = `
+    left:${cx+ox}px; top:${cy+oy}px;
+    width:${sz}px; height:${sz}px;
+    background:hsla(${hue},96%,${62+Math.random()*24}%,${.60+Math.random()*.40});
+    --sx:${sx}px; --sy:${sy}px;
+    animation-duration:${dur}s;
+  `;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), dur * 1000 + 100);
+}
+setInterval(spawnSparkle, 340);
+
+// ── DRAW LOGIC (no-repeat shuffle) ──
+let pool    = [];
+let drawn   = 0;
+let curIdx  = 0;
+
+function refillPool() {
+  pool = LETTERS.map((_,i) => i);
+  // Fisher-Yates shuffle
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+}
+refillPool();
+
+function drawRandom() {
+  if (pool.length === 0) refillPool();
+  const idx = pool.pop();
+  curIdx = idx;
+  drawn++;
+
+  // Flash bottle
+  const stage = document.getElementById('bottleStage');
+  stage.classList.add('flashing');
+  setTimeout(() => stage.classList.remove('flashing'), 420);
+
+  setTimeout(() => openRead(idx), 160);
+}
+
+function drawFromCard() {
+  closeRead();
+  setTimeout(() => drawRandom(), 320);
+}
+
+// ── READ ──
+function openRead(idx) {
+  const l = LETTERS[idx];
+  document.getElementById('rsTitle').textContent = l.title;
+  document.getElementById('rsBody').textContent  = l.content;
+  document.querySelector('.rs-scroll').scrollTop = 0;
+  document.getElementById('rsNum').textContent   = `第 ${drawn} 封`;
+  document.getElementById('readScreen').classList.add('open');
+
+  // update drawn counter on ocean
+  document.getElementById('drawnEl').textContent =
+    drawn <= 0 ? '' : `已取 ${drawn} 封`;
+}
+
+function closeRead() {
+  document.getElementById('readScreen').classList.remove('open');
+}
+</script>
+</body>
+</html>

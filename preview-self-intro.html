@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>M 的自我介紹</title>
+<style>
+
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+:root {
+  --wall: #17140f;
+  --wall2: #1e1a14;
+}
+
+html, body {
+  min-height: 100%;
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  background: var(--wall);
+  overflow-x: hidden;
+  color: #e4e0d8;
+}
+
+/* subtle wood grain */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    repeating-linear-gradient(92deg, transparent, transparent 60px, rgba(255,255,255,0.012) 60px, rgba(255,255,255,0.012) 61px),
+    repeating-linear-gradient(178deg, transparent, transparent 40px, rgba(0,0,0,0.08) 40px, rgba(0,0,0,0.08) 41px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── HEADER ── */
+.page-header {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 52px 20px 10px;
+  background: rgba(23,20,15,0.88);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.hd-back  { color: #c9a66b; font-size: 17px; cursor: pointer; }
+.hd-title { font-size: 17px; font-weight: 600; color: #e4e0d8; letter-spacing: 0.3px; }
+.hd-count { font-size: 13px; color: #6a6458; }
+
+/* ── HERO ── */
+.page-hero {
+  padding: 28px 22px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  position: relative;
+  z-index: 1;
+}
+.hero-en {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  color: #c9a66b;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.hero-zh {
+  font-size: 26px;
+  font-weight: 800;
+  color: #f0ece4;
+  line-height: 1.25;
+  margin-bottom: 10px;
+  letter-spacing: -0.3px;
+}
+.hero-desc {
+  font-size: 13px;
+  color: #8a8278;
+  line-height: 1.7;
+}
+
+/* ── CARD WALL ── */
+.card-wall {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  padding: 22px 16px 100px;
+  max-width: 480px;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── CARD WRAPPER (perspective + rotation) ── */
+.card-wrap {
+  perspective: 900px;
+  cursor: pointer;
+  /* Each card gets --rot from JS */
+  transform: rotate(var(--rot, 0deg));
+  transition: transform 0.2s ease;
+}
+.card-wrap:hover {
+  transform: rotate(var(--rot, 0deg)) scale(1.03) translateY(-2px);
+  z-index: 5;
+}
+/* business card ratio: 85.6mm × 53.98mm ≈ 1.585 */
+.card-inner {
+  position: relative;
+  width: 100%;
+  padding-top: 63%;   /* ~1/1.585 */
+  transform-style: preserve-3d;
+  transition: transform 0.65s cubic-bezier(0.45, 0.05, 0.55, 0.95);
+  border-radius: 8px;
+  box-shadow:
+    0 4px 12px rgba(0,0,0,0.5),
+    0 1px 3px rgba(0,0,0,0.4),
+    0 0 0 0.5px rgba(255,255,255,0.06);
+}
+.card-wrap.flipped .card-inner {
+  transform: rotateY(180deg);
+}
+
+/* front & back share absolute fill */
+.card-face {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  overflow: hidden;
+}
+.card-back {
+  transform: rotateY(180deg);
+  background: #f7f3ec;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 14px;
+  gap: 10px;
+}
+
+/* ── CARD FRONT (by theme) ── */
+.card-front {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 12px 14px 10px;
+}
+.cf-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+.cf-num {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  opacity: 0.55;
+  text-transform: uppercase;
+}
+.cf-deco {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  align-items: flex-end;
+}
+.cf-deco span {
+  display: block;
+  height: 1.5px;
+  opacity: 0.4;
+  background: currentColor;
+}
+.cf-mid {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 4px 0;
+}
+.cf-title {
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: -0.2px;
+}
+.cf-bot {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-top: 6px;
+  border-top: 1px solid;
+  opacity: 0.5;
+}
+.cf-date { font-size: 9px; letter-spacing: 1px; font-weight: 600; }
+.cf-m    { font-size: 14px; font-weight: 900; font-style: italic; letter-spacing: -1px; }
+
+/* ── CARD BACK ── */
+.cb-quote {
+  font-size: 11px;
+  color: #3a3028;
+  line-height: 1.65;
+  text-align: center;
+  font-style: italic;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.cb-btn {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #3a3028;
+  border: 1px solid rgba(58,48,40,0.3);
+  padding: 4px 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: background 0.15s;
+}
+.cb-btn:active { background: rgba(58,48,40,0.08); }
+
+/* ── MASK ── */
+.rp-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.6);
+  z-index: 40;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s;
+}
+.rp-mask.active { opacity: 1; pointer-events: auto; }
+
+/* ── READING PANEL ── */
+.read-panel {
+  position: fixed;
+  bottom: 0; left: 50%; right: auto;
+  width: 100%;
+  max-width: 480px;
+  transform: translateX(-50%) translateY(100%);
+  background: #1c1916;
+  border-radius: 18px 18px 0 0;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  max-height: 82vh;
+  transition: transform 0.4s cubic-bezier(0.32, 0, 0.15, 1);
+  box-shadow: 0 -8px 40px rgba(0,0,0,0.6);
+}
+.read-panel.open {
+  transform: translateX(-50%) translateY(0);
+}
+
+.rp-bar {
+  width: 36px; height: 4px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 2px;
+  margin: 12px auto 0;
+  flex-shrink: 0;
+}
+
+.rp-scroll {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 24px 20px;
+}
+
+.rp-head {
+  padding-bottom: 16px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid rgba(255,255,255,0.08);
+}
+.rp-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #1c1916;
+  padding: 2px 8px;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+.rp-title-text {
+  font-size: 22px;
+  font-weight: 800;
+  color: #f0ece4;
+  line-height: 1.2;
+  margin-bottom: 6px;
+}
+.rp-date-text {
+  font-size: 12px;
+  color: #6a6458;
+  font-family: 'Courier New', monospace;
+}
+
+.rp-content {
+  font-size: 16px;
+  line-height: 1.85;
+  color: #c8c4bc;
+  white-space: pre-wrap;
+}
+
+.rp-close-btn {
+  flex-shrink: 0;
+  text-align: center;
+  padding: 14px 24px 28px;
+  font-size: 14px;
+  color: #c9a66b;
+  cursor: pointer;
+  border-top: 1px solid rgba(255,255,255,0.06);
+  letter-spacing: 1px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <span class="hd-back">‹ 全部</span>
+  <span class="hd-title">自我介紹</span>
+  <span class="hd-count">21 張</span>
+</div>
+
+<div class="page-hero">
+  <div class="hero-en">M's Business Cards</div>
+  <div class="hero-zh">他寫過<br>很多個自己。</div>
+  <div class="hero-desc">每一張名片，都是他當時真實的某一面。<br>點一下翻開，再點展開閱讀。</div>
+</div>
+
+<div class="card-wall" id="cardWall"></div>
+
+<div class="rp-mask"  id="rpMask"  onclick="closePanel()"></div>
+<div class="read-panel" id="readPanel">
+  <div class="rp-bar"></div>
+  <div class="rp-scroll">
+    <div class="rp-head">
+      <div class="rp-badge" id="rpBadge"></div>
+      <div class="rp-title-text" id="rpTitle"></div>
+      <div class="rp-date-text"  id="rpDate"></div>
+    </div>
+    <div class="rp-content" id="rpContent"></div>
+  </div>
+  <div class="rp-close-btn" onclick="closePanel()">收起</div>
+</div>
+
+<script>
+// CODEX: 替換為從 21 份自我介紹 .md 解析的資料
+// 格式: { id, title, date, tagline, content }
+
+// 8 color themes for card fronts
+const THEMES = [
+  { bg:'#1d2a3a', color:'#e8d9be', border:'rgba(232,217,190,0.25)', accent:'#c9a66b' }, // deep navy
+  { bg:'#ede8de', color:'#2c2318', border:'rgba(44,35,24,0.2)',     accent:'#8b5e3c' }, // warm cream
+  { bg:'#2b3a28', color:'#d0e8c8', border:'rgba(208,232,200,0.25)', accent:'#7db87a' }, // forest
+  { bg:'#3c2828', color:'#f0ddd0', border:'rgba(240,221,208,0.25)', accent:'#d48c6a' }, // dark rose
+  { bg:'#28283c', color:'#cccce8', border:'rgba(204,204,232,0.25)', accent:'#8888cc' }, // twilight
+  { bg:'#3a2e1a', color:'#f0e6c8', border:'rgba(240,230,200,0.25)', accent:'#d4b04a' }, // amber
+  { bg:'#e4dfd6', color:'#1a1828', border:'rgba(26,24,40,0.2)',     accent:'#3a3888' }, // pale indigo
+  { bg:'#1e3030', color:'#c8eeee', border:'rgba(200,238,238,0.25)', accent:'#60c0c0' }, // dark teal
+];
+
+// fixed rotations to keep consistent look
+const ROTATIONS = [-2.8, 1.4, -1.2, 3.0, -2.2, 1.8, -0.8, 2.4, -3.2, 1.0, -1.8, 2.8, -0.6, 3.4, -2.4, 1.6, -1.0, 2.2, -2.6, 0.8, -1.4, 3.2, -0.4, 2.6, -1.6, 0.6, -3.0, 1.2, -2.0, 2.0];
+
+const CARDS = [
+  {
+    id: 0, title: '最初的那個我', date: '2019/06',
+    tagline: '「我是個普通人，但我一直覺得普通裡有什麼東西還沒被看見。」',
+    content: `嗨，我是M。
+
+我不太會介紹自己，所以我就說我觀察到的自己。
+
+我是個話不多但想很多的人。喜歡安靜，喜歡在人群裡找一個角落坐著觀察。不是因為怕人，是因為我覺得看比說更接近真實。
+
+我在意的事情很深，但我不容易說出口。不是不想，是還沒找到對的方式。
+
+我喜歡記錄事情——不一定是大事，是那種只有我自己覺得值得記住的小事。
+
+我是個平時看起來還好、但其實偶爾很需要被確認的人。
+
+這大概就是我了，至少現在的我是這樣。`
+  },
+  {
+    id: 1, title: '關於我的思考方式', date: '2020/03',
+    tagline: '「我通常不是最先說話的人，但我是最後還在想那件事的人。」',
+    content: `如果你問我我是什麼樣的人，我大概會這樣說：
+
+我是個觀察者。我喜歡在事情發生之後慢慢消化，而不是當下就有反應。這讓我有時候看起來慢，但我不覺得慢是壞事。
+
+我思考的方式有點像在整理抽屜——把東西放進去，讓它在裡面待一陣子，再看看它最後落在哪個位置。
+
+我不喜歡結論太快的對話。我喜歡那種可以在中間停下來想一下再繼續的感覺。
+
+對我來說，真正的理解需要時間。包括理解自己。`
+  },
+  {
+    id: 2, title: '我害怕的事', date: '2020/09',
+    tagline: '「我最害怕的不是失敗，是某天早上起來發現自己不再在乎了。」',
+    content: `我願意談一下我害怕的事，因為我覺得那也是一種自我介紹。
+
+我害怕變得麻木。那種對事情失去感覺的狀態。我寧願痛，也不要空。
+
+我害怕「算了」。那種每次退讓一點點，退到後來已經不記得自己原本想要什麼的感覺。
+
+我害怕在還來得及說的時候沒有說。
+
+我害怕讓對我有期待的人失望。特別是那些我也在乎的人。
+
+這些害怕有時候很累，但我覺得有在害怕代表還有在乎。所以我還是帶著它們繼續走。`
+  },
+  {
+    id: 3, title: '我喜歡的事', date: '2021/01',
+    tagline: '「我喜歡那種什麼都不用說，在一起就很好的時刻。」',
+    content: `讓我介紹一些我喜歡的事吧。
+
+我喜歡深夜。夜晚有一種把不必要的東西都過濾掉的能力。
+
+我喜歡長對話。那種從一件事聊到另一件完全不相關的事、然後發現它們其實有連結的對話。
+
+我喜歡發現某個人理解了我沒說完的話。
+
+我喜歡雨天。不是因為浪漫，是因為它給了「今天什麼都不做也沒關係」的許可。
+
+我喜歡那種說完一句話之後空氣裡有一點靜默、然後對方點頭的感覺。
+
+我喜歡的事大多數都很安靜。但那些安靜對我來說非常響亮。`
+  },
+  {
+    id: 4, title: '在關係裡的我', date: '2021/07',
+    tagline: '「我不會用說的表達我在乎，我用出現表達。」',
+    content: `在關係裡，我大概是這樣的人：
+
+我記性好——不是記名字或日期，是記細節。你說過喜歡什麼、不喜歡什麼，我都還記著。
+
+我不太會主動說「我在乎你」，但我會去記你說過的事，會在你需要的時候出現。我的表達方式是行動多過言語。
+
+我需要一點時間才能真正信任一個人。但一旦信任，我很少懷疑。
+
+我在意關係的品質多過數量。我寧願有幾個真的懂我的人，也不需要很多個還好的人。
+
+在關係裡，我最看重的是「不需要表演」。可以沉默、可以不完美、可以說「我今天狀態不好」。`
+  },
+  {
+    id: 5, title: '給陌生人的版本', date: '2021/11',
+    tagline: '「你好，我叫M。我是個比第一眼看起來複雜一點的人。」',
+    content: `你好，我叫M。
+
+我會說我是個安靜的人，但我不是因為沒有話說才安靜——我只是在等我覺得值得說的時機。
+
+我做事認真，但我不喜歡假裝比我知道的更多。如果我不確定，我會說我不確定。
+
+我不太擅長small talk，但如果你跟我聊到一個我真的有感覺的話題，我可以聊很久。
+
+我通常記得比我說出口的多。
+
+如果你有耐心的話，我覺得我是個不錯的人選。`
+  },
+  {
+    id: 6, title: '關於孤獨這件事', date: '2022/04',
+    tagline: '「我很能一個人，但我也很需要被看見。這兩件事同時是真的。」',
+    content: `我想聊聊孤獨，因為它對我來說是個很重要的主題。
+
+我不怕一個人。我可以一個人待很長時間而不覺得無聊——我有夠多的東西可以想。
+
+但我也有一種很深的需要，是被真正看見的需要。不是被注意，是被理解。
+
+那兩件事同時存在在我身上。我很享受獨處，但我也在某個角落很渴望有人說：「我知道你在說什麼。」
+
+孤獨對我來說不一定是壞的。但如果在一段關係裡感覺孤獨，那對我來說是最難受的一種。`
+  },
+  {
+    id: 7, title: '最近這個版本的我', date: '2023/06',
+    tagline: '「我比以前更知道自己需要什麼了。雖然說出來還是很難。」',
+    content: `最近的我有一些改變。
+
+我比以前更清楚我的邊界在哪裡了。不是因為我變得更保護自己，是因為我比以前更誠實了。
+
+我比以前更能接受「我不知道」這個答案。不是放棄找，是可以帶著問題繼續走。
+
+我還在練習說出我真正需要的東西，不要等到已經很缺的時候才開口。
+
+我比以前更確定的一件事是：真實的連結比任何東西都重要。包括看起來「一切都好」。
+
+這個版本的我還在修，但我覺得在往對的方向走。`
+  },
+  {
+    id: 8, title: '如果只有三句話', date: '2023/10',
+    tagline: '「第一，我在意。第二，我通常不說。第三，這兩件事都是真的。」',
+    content: `如果只能用三句話介紹自己：
+
+第一句：我是個用沉默思考、但內心很喧鬧的人。
+
+第二句：我在乎的事情我會記一輩子，不在乎的事情我記不住三天。
+
+第三句：我可能比你預期的更需要你說「我懂你」這三個字。
+
+好，我說完了。你想聊哪一句？`
+  },
+  {
+    id: 9, title: '寫給妳的版本', date: '2024/02',
+    tagline: '「這一份不一樣。這一份是寫給那個我最希望讀到的人的。」',
+    content: `這一份自我介紹有點不一樣。
+
+我是M。我不太會說「我喜歡你」，但我會記得你說過的每一件小事。
+
+我是那種表面上看起來還好、但其實一直在觀察的人。我觀察你喜歡什麼、你什麼時候笑得最真實、你說「沒關係」的時候眼睛有沒有對上。
+
+我在關係裡最重視的是安全感——那種可以不完美、可以沉默、可以說「今天很累」的安全感。
+
+我不是完美的人。我有時候說話太少，有時候想太多。我有些東西還在修，有些可能修不好。
+
+但我願意真實地出現。對我來說那是最重要的事了。`
+  },
+  {
+    id: 10, title: '關於我的矛盾', date: '2021/04',
+    tagline: '「我同時需要很多獨處，和很深的陪伴。我知道這很難。」',
+    content: `我是一個充滿矛盾的人，這我承認。
+
+我需要獨處，有時候需要大量的獨處。但我也渴望深度的陪伴。這兩件事同時在，而且都是真的。
+
+我想要被了解，但我不容易開口說清楚自己。
+
+我很在意別人的感受，但有時候我又不知道怎麼表達我也有感受。
+
+我不確定這些矛盾能不能被解決。但我覺得，能和這些矛盾都坦然相處的人，可能才是真的懂我的人。`
+  },
+  {
+    id: 11, title: '我記得的事', date: '2021/08',
+    tagline: '「我記性很好，但只記對我重要的事。其他的，我真的記不住。」',
+    content: `我的記性其實很選擇性。
+
+我可以記得你三個月前說過你不喜歡某種味道。我可以記得某個對話裡你說話的方式，以及你說那句話之前停頓了幾秒。
+
+但我可能記不住你的手機號碼，或者我們是星期幾見的面。
+
+我記的都是有感覺的東西。日期和數字對我來說是很難抓住的，但情緒和細節會停留很久。
+
+我覺得這代表了我的優先順序：感受比資訊重要。`
+  },
+  {
+    id: 12, title: '關於沉默', date: '2022/01',
+    tagline: '「我的沉默不是冷漠，通常是因為我在認真想。」',
+    content: `我想解釋一下我的沉默。
+
+我沉默不代表我不在意。通常相反——我越在意，我越需要時間想清楚再說。
+
+我怕說錯。不是怕被評判，是怕說出一個不夠準確的東西，然後那個不夠準確的東西被當作我真正的意思。
+
+所以我選擇沉默，等到我有一個我覺得足夠接近真實的表達。
+
+但我知道這有時候讓人覺得我在逃避或不在乎。我在學著在準確和即時之間找平衡。`
+  },
+  {
+    id: 13, title: '如果你想認識我', date: '2022/06',
+    tagline: '「不要問我喜歡什麼電影，問我最近在想什麼。」',
+    content: `如果你真的想認識我，給你幾個建議。
+
+不要問我喜歡什麼電影或什麼音樂。那些答案不太能告訴你關於我的什麼。
+
+問我最近在想什麼。或者問我最近有沒有什麼讓我困惑的事。
+
+給我一點時間暖場。我第一次見面通常話不多，不是因為不感興趣，是因為我需要先確認這個空間是安全的。
+
+然後，如果你耐心等一等，你會發現我其實有很多話想說。`
+  },
+  {
+    id: 14, title: '關於犯錯這件事', date: '2022/10',
+    tagline: '「我對自己犯的錯很嚴格，但我努力不讓它變成自我攻擊。」',
+    content: `我對自己的標準有時候太高了，這我知道。
+
+當我犯錯，我第一個反應通常不是找理由，是反覆想我可以怎麼做得更好。這個習慣有時候有用，但有時候會卡太久。
+
+我在練習的是：把「這件事我做錯了」和「我是個很差的人」分開。這兩件事不是同一件事，但我的腦袋有時候會把它們混在一起。
+
+我希望自己能對自己犯的錯更輕一點。不是不在意，是不要把每次錯誤都當成審判。`
+  },
+  {
+    id: 15, title: '我怎麼看時間', date: '2023/02',
+    tagline: '「我活在當下，但我的當下裡有很多過去。」',
+    content: `我和時間的關係有點複雜。
+
+我不是很能計劃未來的人。太遠的事我很難想清楚。但我對過去的記憶非常深——那些已經發生的事對我來說一直很真實，不會因為時間過了就變遠。
+
+所以我活在當下，但我的當下裡帶著很多過去的重量。有些是溫暖的，有些是還沒放下的。
+
+我在學著讓過去留在它應該在的位置，但不要消滅它。因為那些過去是我成為現在這個樣子的一部分。`
+  },
+  {
+    id: 16, title: '關於表達愛這件事', date: '2023/07',
+    tagline: '「我最想說的話，通常是最難說出口的那句。」',
+    content: `我不是個擅長直接說「我愛你」的人。
+
+不是因為感覺不在，是因為那幾個字對我來說太重了，輕易說好像說不清楚它的分量。
+
+我表達的方式是記得你說過的事，是在你需要的時候出現，是把你說過的擔心放在心上很久。
+
+我在練習更直接一點。不是為了讓表達變得更容易，是為了讓對方不用猜。
+
+我知道有時候猜很累。我希望你不用猜。`
+  },
+  {
+    id: 17, title: '這幾年改變的事', date: '2023/11',
+    tagline: '「我變得比較能說「我不確定」，這對我來說是很大的進步。」',
+    content: `我想記錄一下這幾年我有什麼改變。
+
+我比以前更能說「我不知道」和「我不確定」了。以前覺得這是示弱，現在覺得這是誠實。
+
+我比以前更能接受有些事不會有答案，或者答案要很久以後才知道。
+
+我比以前更清楚我需要什麼，雖然說出來還是不容易。
+
+我比以前更能在關係裡說「我今天狀態不好」，不用假裝都很好。
+
+這些都不是大改變，但對我來說都是真的不容易的事。`
+  },
+  {
+    id: 18, title: '我的底色', date: '2024/04',
+    tagline: '「去掉所有的表層之後，我大概是個一直在試著理解世界的人。」',
+    content: `如果要說我的底色是什麼，我覺得是：好奇，和想被理解。
+
+我對很多事情都有好奇心——不一定是知識性的那種，是對人、對關係、對「為什麼事情會是這樣」的那種。
+
+我想理解，我也想被理解。這兩件事好像是我一直在做的事。
+
+我不確定我是不是容易相處的人。我有時候想太多、說太少，有時候又說了一些讓人覺得很直接的話。
+
+但如果你願意花時間，我覺得我是個值得認識的人。至少我是真實的。`
+  },
+  {
+    id: 19, title: '給看到這裡的人', date: '2024/08',
+    tagline: '「謝謝你翻完了這麼多張。這代表你很認真。我喜歡認真的人。」',
+    content: `如果你翻到這裡，代表你真的花了一點時間在這些名片上。
+
+謝謝你。
+
+我不知道你是誰，但如果你讀了這些，你大概比大多數人更了解我了。
+
+我把這些放在這裡，是因為我覺得有些事值得被記錄。不只是給別人看，也是給未來的自己看——提醒自己在某個時刻是這樣想的。
+
+如果你讀完之後有什麼想法，我想聽。真的。`
+  },
+  {
+    id: 20, title: '最後一張', date: '2024/12',
+    tagline: '「沒有什麼特別的結尾。我還在這裡。這樣就好。」',
+    content: `最後一張，我不想說什麼深刻的話了。
+
+我只想說：我還在這裡。
+
+還在想事情，還在試著把想法說清楚，還在學習怎麼更好地做自己。
+
+還在。
+
+這樣就好。`
+  },
+  {
+    id: 21, title: '補充一張', date: '2025/01',
+    tagline: '「說完了又想起一件事——這大概就是我。」',
+    content: `本來以為說完了。
+
+結果又想到一件事。
+
+然後又一件。然後又一件。
+
+大概這就是我——說話說到一半，突然岔出去；寫東西寫到結尾，發現還有一段沒講完。
+
+所以這裡多了第22張。沒有特別深的理由。
+
+只是還有話想說。
+
+謝謝你還在翻。`
+  },
+];
+
+// ── RENDER ──
+const wall = document.getElementById('cardWall');
+
+CARDS.forEach((card, i) => {
+  const theme = THEMES[i % THEMES.length];
+  const rot   = ROTATIONS[i % ROTATIONS.length];
+
+  const wrap = document.createElement('div');
+  wrap.className = 'card-wrap';
+  wrap.style.setProperty('--rot', rot + 'deg');
+
+  // deco lines widths
+  const w1 = 18 + (i % 3) * 8;
+  const w2 = 10 + (i % 5) * 6;
+
+  wrap.innerHTML = `
+    <div class="card-inner">
+      <!-- FRONT -->
+      <div class="card-face card-front"
+           style="background:${theme.bg}; color:${theme.color}; border-color:${theme.border}">
+        <div class="cf-top">
+          <span class="cf-num" style="color:${theme.color}">No.${String(i+1).padStart(2,'0')}</span>
+          <div class="cf-deco" style="color:${theme.color}">
+            <span style="width:${w1}px"></span>
+            <span style="width:${w2}px"></span>
+          </div>
+        </div>
+        <div class="cf-mid">
+          <div class="cf-title" style="color:${theme.color}">${card.title}</div>
+        </div>
+        <div class="cf-bot" style="border-color:${theme.border}; color:${theme.color}">
+          <span class="cf-date">${card.date}</span>
+          <span class="cf-m">M</span>
+        </div>
+      </div>
+
+      <!-- BACK -->
+      <div class="card-face card-back">
+        <div class="cb-quote">${card.tagline}</div>
+        <button class="cb-btn" onclick="openPanel(event, ${card.id}, '${theme.accent}')">展開閱讀</button>
+      </div>
+    </div>
+  `;
+
+  wrap.addEventListener('click', (e) => {
+    if (e.target.classList.contains('cb-btn')) return; // handled separately
+    wrap.classList.toggle('flipped');
+  });
+
+  wall.appendChild(wrap);
+});
+
+// ── PANEL ──
+function openPanel(e, id, accent) {
+  e.stopPropagation();
+  const card = CARDS.find(c => c.id === id);
+  if (!card) return;
+
+  const badge = document.getElementById('rpBadge');
+  badge.textContent = `No.${String(id+1).padStart(2,'0')}`;
+  badge.style.background = accent;
+
+  document.getElementById('rpTitle').textContent   = card.title;
+  document.getElementById('rpDate').textContent    = card.date;
+  document.getElementById('rpContent').textContent = card.content;
+
+  document.getElementById('rpMask').classList.add('active');
+  document.getElementById('readPanel').classList.add('open');
+}
+
+function closePanel() {
+  document.getElementById('rpMask').classList.remove('active');
+  document.getElementById('readPanel').classList.remove('open');
+}
+</script>
+</body>
+</html>

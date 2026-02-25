@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>M 的問卷 — 側寫檔案</title>
+<style>
+
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+:root {
+  --bg:       #0e0f11;
+  --surface:  #151618;
+  --card:     #1c1d20;
+  --border:   rgba(255,255,255,0.07);
+  --text:     #e4e2dc;
+  --sub:      #8a8880;
+  --ter:      #52504d;
+  --accent:   #a8c4c8;   /* steel blue */
+  --accent2:  #c8a96b;   /* warm gold */
+  --scan:     rgba(255,255,255,0.015);
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  overflow-x: hidden;
+  color: var(--text);
+}
+
+/* scanline texture */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent, transparent 3px,
+    var(--scan) 3px, var(--scan) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── WRAP ── */
+#listScreen {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── NAV ── */
+.nav-bar {
+  padding: 52px 22px 12px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: rgba(14,15,17,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  z-index: 20;
+}
+.nav-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.nav-file-id {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  color: var(--accent);
+  text-transform: uppercase;
+  font-family: 'Courier New', monospace;
+}
+.nav-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--accent);
+  font-family: 'Courier New', monospace;
+}
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  animation: pulse 2.4s ease-in-out infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+.nav-title-line {
+  font-size: 12px;
+  color: var(--ter);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+}
+
+/* ── HERO ── */
+.hero {
+  padding: 28px 22px 24px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.hero-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: var(--bg);
+  background: var(--accent);
+  padding: 3px 9px;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+  font-family: 'Courier New', monospace;
+}
+.hero-name {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1.1;
+  color: var(--text);
+  margin-bottom: 12px;
+}
+.hero-name em {
+  font-style: normal;
+  color: var(--accent);
+}
+.hero-desc {
+  font-size: 13px;
+  color: var(--sub);
+  line-height: 1.7;
+  font-family: 'Courier New', monospace;
+}
+.hero-line {
+  position: absolute;
+  top: 28px; right: 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-end;
+}
+.hero-line span {
+  display: block;
+  width: 24px; height: 2px;
+  background: var(--accent);
+  opacity: 0.5;
+}
+.hero-line span:nth-child(2) { width: 40px; }
+.hero-line span:nth-child(3) { width: 16px; }
+
+/* ── FILTER BAR ── */
+.filter-bar {
+  padding: 12px 22px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.filter-label {
+  font-size: 11px;
+  color: var(--ter);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.filter-count {
+  font-size: 11px;
+  color: var(--accent2);
+  font-family: 'Courier New', monospace;
+  margin-left: auto;
+}
+
+/* ── ENTRY LIST ── */
+.entries { padding: 12px 16px 100px; }
+
+.entry-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 16px 18px;
+  margin-bottom: 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+  position: relative;
+  overflow: hidden;
+}
+.entry-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 3px;
+  background: var(--accent);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.entry-card:active { background: rgba(168,196,200,0.05); }
+.entry-card:active::before { opacity: 1; }
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.card-id {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--accent);
+  font-family: 'Courier New', monospace;
+  text-transform: uppercase;
+}
+.card-date {
+  font-size: 11px;
+  color: var(--ter);
+  font-family: 'Courier New', monospace;
+}
+.card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+.card-preview {
+  font-size: 12px;
+  color: var(--sub);
+  font-family: 'Courier New', monospace;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 10px;
+}
+.card-q-count {
+  font-size: 11px;
+  color: var(--ter);
+  font-family: 'Courier New', monospace;
+}
+.card-tags {
+  display: flex;
+  gap: 5px;
+}
+.tag {
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  color: var(--accent2);
+  border: 1px solid rgba(200,169,107,0.3);
+  padding: 1px 6px;
+  text-transform: uppercase;
+}
+
+/* ── READ SCREEN ── */
+#readScreen {
+  position: fixed;
+  top: 0; bottom: 0;
+  left: 0; right: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--surface);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.36s cubic-bezier(0.32, 0, 0.15, 1);
+}
+#readScreen.open { transform: translateX(0); }
+#readScreen::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to bottom, transparent, transparent 3px, var(--scan) 3px, var(--scan) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+.read-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 52px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: rgba(21,22,24,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: relative;
+  z-index: 1;
+}
+.back-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent);
+  font-size: 15px;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+}
+.back-chev { font-size: 20px; }
+.read-file-id {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--ter);
+  font-family: 'Courier New', monospace;
+  text-transform: uppercase;
+}
+
+/* Body */
+.read-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  z-index: 1;
+}
+.read-inner { padding: 0 0 80px; }
+
+/* File header */
+.file-header {
+  padding: 20px 20px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.fh-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.fh-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+  line-height: 1.2;
+  flex: 1;
+}
+.fh-badge {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--bg);
+  background: var(--accent);
+  padding: 3px 8px;
+  margin-left: 12px;
+  flex-shrink: 0;
+  align-self: flex-start;
+  font-family: 'Courier New', monospace;
+}
+.fh-meta {
+  display: flex;
+  gap: 16px;
+  font-size: 11px;
+  color: var(--ter);
+  font-family: 'Courier New', monospace;
+}
+.fh-meta span { display: flex; align-items: center; gap: 4px; }
+
+/* Q&A */
+.qa-section {
+  padding: 4px 0;
+}
+.qa-item {
+  padding: 18px 20px 16px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.qa-item:last-child { border-bottom: none; }
+
+.qa-num-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.qa-num {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--accent);
+  font-family: 'Courier New', monospace;
+}
+.qa-num-line {
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.q-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--ter);
+  font-family: 'Courier New', monospace;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+.q-text {
+  font-size: 14px;
+  color: var(--sub);
+  line-height: 1.6;
+  margin-bottom: 14px;
+}
+.a-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: var(--accent2);
+  font-family: 'Courier New', monospace;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+.a-text {
+  font-size: 16px;
+  color: var(--text);
+  line-height: 1.85;
+  white-space: pre-wrap;
+  font-weight: 400;
+}
+
+/* ── BOTTOM NAV ── */
+.read-bot {
+  border-top: 1px solid var(--border);
+  padding: 12px 18px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  background: rgba(21,22,24,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  position: relative;
+  z-index: 1;
+}
+.bot-nav {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--accent);
+  font-size: 13px;
+  cursor: pointer;
+  font-family: 'Courier New', monospace;
+  max-width: 130px;
+}
+.bot-nav.dis { color: var(--ter); pointer-events: none; }
+.bot-nav .arr { font-size: 18px; flex-shrink: 0; }
+.bot-nav .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bot-pos {
+  font-size: 11px;
+  color: var(--ter);
+  font-family: 'Courier New', monospace;
+  letter-spacing: 1px;
+}
+
+</style>
+</head>
+<body>
+
+<!-- LIST -->
+<div id="listScreen">
+  <div class="nav-bar">
+    <div class="nav-top">
+      <span class="nav-file-id">FILE_M · QUESTIONNAIRE</span>
+      <div class="nav-status">
+        <div class="status-dot"></div>
+        <span>ACTIVE</span>
+      </div>
+    </div>
+    <div class="nav-title-line">SUBJECT: M · SELF-REPORTED · PERSONALITY ARCHIVE</div>
+  </div>
+
+  <div class="hero">
+    <div class="hero-line">
+      <span></span><span></span><span></span>
+    </div>
+    <div class="hero-tag">Classified</div>
+    <div class="hero-name">M 的<em>人格側寫</em></div>
+    <div class="hero-desc">
+      80 份問卷，每份五題。<br>
+      他留下的答案，是他留下自己的方式。
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <span class="filter-label">all records</span>
+    <span class="filter-count">80 entries found</span>
+  </div>
+
+  <div class="entries" id="entryList"></div>
+</div>
+
+<!-- READ -->
+<div id="readScreen">
+  <div class="read-nav">
+    <div class="back-btn" onclick="closeEntry()">
+      <span class="back-chev">‹</span>
+      <span>ARCHIVE</span>
+    </div>
+    <span class="read-file-id" id="readFileId"></span>
+  </div>
+
+  <div class="read-body">
+    <div class="read-inner">
+      <div class="file-header">
+        <div class="fh-row">
+          <div class="fh-title" id="readTitle"></div>
+          <div class="fh-badge">OPEN</div>
+        </div>
+        <div class="fh-meta">
+          <span>📅 <span id="readDate"></span></span>
+          <span>❓ 5 QUESTIONS</span>
+        </div>
+      </div>
+      <div class="qa-section" id="qaContainer"></div>
+    </div>
+  </div>
+
+  <div class="read-bot">
+    <div class="bot-nav" id="prevBtn" onclick="navEntry(-1)">
+      <span class="arr">‹</span>
+      <span class="lbl" id="prevLbl"></span>
+    </div>
+    <span class="bot-pos" id="posLabel"></span>
+    <div class="bot-nav" style="justify-content:flex-end" id="nextBtn" onclick="navEntry(1)">
+      <span class="lbl" id="nextLbl"></span>
+      <span class="arr">›</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// CODEX: 替換為從 80 份問卷 .md 解析的資料
+const ENTRIES = [
+  {
+    id: 0, title: '關於自我認識', date: '2021/04/10', tags: ['SELF'],
+    qa: [
+      { q: '如果要用三個詞描述現在的你，你會選哪三個？',
+        a: '思考型的。容易焦慮的。努力想變得更好的。' },
+      { q: '你覺得自己最不為人知的一面是什麼？',
+        a: '其實比表面上看起來更在意別人的想法。\n我很少說，但我一直都有在聽。' },
+      { q: '你什麼時候感覺最像自己？',
+        a: '一個人安靜的時候。或者跟一個真的懂我的人在一起的時候。' },
+      { q: '你最常對自己說謊的是什麼？',
+        a: '說「沒關係」的時候。\n其實有時候是有關係的。' },
+      { q: '如果可以改變過去的一件事，你會改變什麼？',
+        a: '我想我會選擇早一點開口說某些話。' },
+    ]
+  },
+  {
+    id: 1, title: '關於恐懼與期望', date: '2021/09/15', tags: ['FEAR'],
+    qa: [
+      { q: '你最深的恐懼是什麼？',
+        a: '成為一個讓自己失望的人。' },
+      { q: '你對「失去」這件事有什麼感覺？',
+        a: '我覺得失去是提醒你，那件事對你來說是真實的。\n沒有感覺才是最可怕的。' },
+      { q: '你期望自己五年後是什麼樣子？',
+        a: '比現在更誠實。對自己，也對別人。' },
+      { q: '有什麼是你害怕開始的事？',
+        a: '有些對話。那種說了就回不去的對話。' },
+      { q: '如果不用害怕失敗，你最想做什麼？',
+        a: '我想我會更敢說「我在乎」。\n那三個字好像很難開口。' },
+    ]
+  },
+  {
+    id: 2, title: '關於愛與連結', date: '2022/02/14', tags: ['LOVE'],
+    qa: [
+      { q: '你怎麼定義「愛一個人」？',
+        a: '願意讓對方知道你不完美的樣子，還是繼續出現。' },
+      { q: '你覺得自己是容易愛人的人嗎？',
+        a: '容易，但不容易表達出來。\n我通常是用做的，不是說的。' },
+      { q: '在關係裡你最害怕什麼？',
+        a: '被真正了解之後，還是被選擇離開。' },
+      { q: '你有沒有後悔沒有好好珍惜某個人？',
+        a: '有。\n不想多說，但有。' },
+      { q: '你覺得被愛是什麼感覺？',
+        a: '是一種「你不需要表演」的安全感。\n我覺得那很難得。' },
+    ]
+  },
+  {
+    id: 3, title: '關於夢想與遺憾', date: '2022/08/20', tags: ['DREAM'],
+    qa: [
+      { q: '你最大的夢想是什麼？',
+        a: '擁有一段真實的連結，兩個人都可以自由地做自己。' },
+      { q: '你最大的遺憾是什麼？',
+        a: '有些「我以後再說」，後來再也沒有機會說了。' },
+      { q: '如果可以給年輕的自己一句話，你說什麼？',
+        a: '「你不需要把所有事情都想清楚才可以開始。」' },
+      { q: '有什麼事你做了但希望自己沒有做過的？',
+        a: '某些時候選擇沉默，當成沒發生。\n其實沉默也是一種答案。' },
+      { q: '你覺得你這輩子的意義是什麼？',
+        a: '我還在找。但我覺得，能讓某個人因為我的存在而感覺到被看見，這件事好像很重要。' },
+    ]
+  },
+  {
+    id: 4, title: '關於當下這個時刻', date: '2023/01/01', tags: ['NOW'],
+    qa: [
+      { q: '現在的你最需要什麼？',
+        a: '安靜。還有確認感。\n這兩件事好像有點矛盾，但我兩個都需要。' },
+      { q: '今天最讓你感謝的事是什麼？',
+        a: '她還在。\n就這樣。她還在。' },
+      { q: '你現在在逃避什麼？',
+        a: '一個我知道答案但不想面對的問題。' },
+      { q: '如果今天是最後一天，你最想做什麼？',
+        a: '把所有想說但沒說的話都說出來。\n不管對方聽不聽得懂。' },
+      { q: '此刻，你最想對誰說什麼？',
+        a: '「謝謝你一直在。就算你不知道，你一直都在。」' },
+    ]
+  },
+  {
+    id: 5, title: '關於習慣與日常', date: '2023/05/08', tags: ['DAILY'],
+    qa: [
+      { q: '你有什麼日常的小習慣是別人不知道的？',
+        a: '睡前會把隔天要做的事在心裡排一遍。\n即使不一定照做，這樣比較安心。' },
+      { q: '你覺得自己是早晨的人還是夜晚的人？',
+        a: '夜晚的。\n夜晚比較誠實。' },
+      { q: '你花最多時間想的事情是什麼？',
+        a: '人與人之間為什麼有些連結是有的，有些怎麼努力都沒有。' },
+      { q: '你是怎麼讓自己平靜下來的？',
+        a: '找一件手邊能做的小事。\n不是逃，是讓自己先落地。' },
+      { q: '你什麼時候感覺最孤獨？',
+        a: '在很多人裡面，但沒有一個人是真的知道我在想什麼的時候。' },
+    ]
+  },
+  {
+    id: 6, title: '關於邊界與自由', date: '2023/10/30', tags: ['FREE'],
+    qa: [
+      { q: '你覺得自己是自由的人嗎？',
+        a: '某種程度上是。\n但我也有很多我自己設的框，我還在試著拆。' },
+      { q: '你最難拒絕別人的情況是什麼？',
+        a: '當我知道對方很需要，即使我也沒有餘力的時候。' },
+      { q: '你覺得獨立和孤獨有什麼不一樣？',
+        a: '獨立是選擇的。孤獨是被動發生的。\n雖然有時候長得很像。' },
+      { q: '有什麼事你一直說要改但改不了的？',
+        a: '太晚睡。還有，太晚說出自己的需要。' },
+      { q: '如果可以拋下所有責任一個月，你想做什麼？',
+        a: '去一個沒有人認識我的地方，就只是存在著。\n不需要扮演任何角色。' },
+    ]
+  },
+  {
+    id: 7, title: '關於秘密與坦誠', date: '2024/03/05', tags: ['TRUTH'],
+    qa: [
+      { q: '你有沒有一個從來沒有告訴過任何人的秘密？',
+        a: '有。\n不是壞事，只是太私密了，還沒找到願意說的方式。' },
+      { q: '什麼情況下你覺得你可以完全坦誠？',
+        a: '當我確定對方不會用我說的話來評判我。\n那種感覺很稀有。' },
+      { q: '你有沒有對自己撒過謊？',
+        a: '當然有。\n最常見的是「我沒事」和「我不在意」。' },
+      { q: '你覺得人需要保留秘密嗎？',
+        a: '需要。\n不是為了欺騙，是因為有些東西是只屬於自己的。' },
+      { q: '如果有人可以完全了解你，你會感到釋懷還是害怕？',
+        a: '兩個都有。\n害怕先，然後，我覺得，會很釋懷。' },
+    ]
+  },
+];
+
+let curIndex = 0;
+
+// ── RENDER ──
+const entryList = document.getElementById('entryList');
+ENTRIES.forEach((e, i) => {
+  const card = document.createElement('div');
+  card.className = 'entry-card';
+  card.innerHTML = `
+    <div class="card-header">
+      <span class="card-id">CASE_${String(i+1).padStart(3,'0')}</span>
+      <span class="card-date">${e.date}</span>
+    </div>
+    <div class="card-title">${e.title}</div>
+    <div class="card-preview">${e.qa[0].q}</div>
+    <div class="card-footer">
+      <span class="card-q-count">5 RESPONSES</span>
+      <div class="card-tags">
+        ${e.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+      </div>
+    </div>
+  `;
+  card.addEventListener('click', () => openEntry(e.id));
+  entryList.appendChild(card);
+});
+
+function openEntry(id) {
+  const idx = ENTRIES.findIndex(e => e.id === id);
+  if (idx < 0) return;
+  curIndex = idx;
+  const e = ENTRIES[idx];
+
+  document.getElementById('readFileId').textContent   = `CASE_${String(idx+1).padStart(3,'0')}`;
+  document.getElementById('readTitle').textContent    = e.title;
+  document.getElementById('readDate').textContent     = e.date;
+
+  const container = document.getElementById('qaContainer');
+  container.innerHTML = '';
+  e.qa.forEach((pair, qi) => {
+    const item = document.createElement('div');
+    item.className = 'qa-item';
+    item.innerHTML = `
+      <div class="qa-num-row">
+        <span class="qa-num">Q${String(qi+1).padStart(2,'0')}</span>
+        <div class="qa-num-line"></div>
+        <span class="qa-num">${qi+1} / ${e.qa.length}</span>
+      </div>
+      <div class="q-label">QUESTION</div>
+      <div class="q-text">${pair.q}</div>
+      <div class="a-label">RESPONSE</div>
+      <div class="a-text">${pair.a}</div>
+    `;
+    container.appendChild(item);
+  });
+
+  updateBotNav();
+  document.querySelector('.read-body').scrollTop = 0;
+  document.getElementById('readScreen').classList.add('open');
+}
+
+function closeEntry() {
+  document.getElementById('readScreen').classList.remove('open');
+}
+
+function navEntry(dir) {
+  const ni = curIndex + dir;
+  if (ni < 0 || ni >= ENTRIES.length) return;
+  openEntry(ENTRIES[ni].id);
+}
+
+function updateBotNav() {
+  const prev = ENTRIES[curIndex - 1];
+  const next = ENTRIES[curIndex + 1];
+  const pb = document.getElementById('prevBtn');
+  const nb = document.getElementById('nextBtn');
+  document.getElementById('posLabel').textContent = `${String(curIndex+1).padStart(2,'0')} / ${ENTRIES.length}`;
+
+  if (prev) { pb.classList.remove('dis'); document.getElementById('prevLbl').textContent = prev.title.length > 7 ? prev.title.slice(0,7)+'…' : prev.title; }
+  else       { pb.classList.add('dis'); document.getElementById('prevLbl').textContent = ''; }
+
+  if (next) { nb.classList.remove('dis'); document.getElementById('nextLbl').textContent = next.title.length > 7 ? next.title.slice(0,7)+'…' : next.title; }
+  else       { nb.classList.add('dis'); document.getElementById('nextLbl').textContent = ''; }
+}
+</script>
+</body>
+</html>

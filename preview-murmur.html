@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>M 的碎碎念</title>
+<style>
+
+*,*::before,*::after { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+:root {
+  --bg:       #0d0d0f;
+  --header:   rgba(18,18,22,0.94);
+  --bubble:   #242428;
+  --bubble-h: #2e2e34;
+  --text:     #f0ede8;
+  --sub:      #8e8e96;
+  --ter:      #48484e;
+  --gold:     #c9a66b;
+  --border:   rgba(255,255,255,0.06);
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  overflow-x: hidden;
+  color: var(--text);
+}
+
+/* ambient glow top */
+body::before {
+  content: '';
+  position: fixed;
+  top: -80px; left: 50%;
+  transform: translateX(-50%);
+  width: 280px; height: 280px;
+  background: radial-gradient(circle, rgba(201,166,107,0.07) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── HEADER ── */
+.chat-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: var(--header);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-bottom: 0.5px solid var(--border);
+  padding: 52px 20px 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hd-back {
+  font-size: 17px;
+  color: var(--gold);
+  margin-right: 2px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.contact-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+.contact-avatar {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c9a66b, #8b6347);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  letter-spacing: -0.5px;
+  box-shadow: 0 2px 8px rgba(201,166,107,0.3);
+  margin-bottom: 3px;
+}
+.contact-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+}
+.contact-sub {
+  font-size: 11px;
+  color: var(--sub);
+}
+.hd-right {
+  font-size: 20px;
+  color: var(--gold);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+/* ── CHAT BODY ── */
+.chat-body {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 16px 0 80px;
+  position: relative;
+  z-index: 1;
+}
+
+/* time divider */
+.time-divider {
+  text-align: center;
+  font-size: 11px;
+  color: var(--ter);
+  padding: 20px 0 8px;
+  letter-spacing: 0.5px;
+  user-select: none;
+}
+.time-divider:first-child { padding-top: 8px; }
+
+/* message row */
+.msg-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 2px 16px 2px 12px;
+}
+.msg-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c9a66b, #8b6347);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 800;
+  color: #fff;
+  flex-shrink: 0;
+  margin-bottom: 2px;
+  box-shadow: 0 1px 4px rgba(201,166,107,0.25);
+}
+/* avatar only on first of a group */
+.msg-row.no-avatar .msg-avatar { visibility: hidden; }
+
+/* bubble */
+.bubble {
+  max-width: 78%;
+  background: var(--bubble);
+  border-radius: 18px 18px 18px 4px;
+  padding: 11px 14px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.15s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.bubble:active { background: var(--bubble-h); }
+.bubble.open   { background: var(--bubble-h); border-radius: 18px; }
+
+.bubble-text {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--text);
+  white-space: pre-wrap;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  transition: none;
+}
+.bubble.open .bubble-text {
+  display: block;
+  -webkit-line-clamp: unset;
+  overflow: visible;
+}
+
+/* expand hint */
+.bubble-hint {
+  font-size: 11px;
+  color: var(--gold);
+  margin-top: 6px;
+  letter-spacing: 0.3px;
+  transition: opacity 0.2s;
+}
+.bubble.open .bubble-hint { display: none; }
+
+/* read tag */
+.bubble-read {
+  font-size: 10px;
+  color: var(--ter);
+  margin-top: 5px;
+  text-align: right;
+  letter-spacing: 0.5px;
+  display: none;
+}
+.bubble.open .bubble-read { display: block; }
+
+/* ── BOTTOM STATUS ── */
+.chat-bottom {
+  position: fixed;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 100%; max-width: 480px;
+  background: var(--header);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 0.5px solid var(--border);
+  padding: 12px 20px 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 20;
+}
+.input-mock {
+  flex: 1;
+  background: rgba(255,255,255,0.06);
+  border-radius: 20px;
+  padding: 9px 16px;
+  font-size: 15px;
+  color: var(--ter);
+  border: 0.5px solid var(--border);
+}
+
+/* ── READ SCREEN ── */
+#readScreen {
+  position: fixed;
+  top: 0; bottom: 0;
+  left: 0; right: 0;
+  max-width: 480px;
+  margin: 0 auto;
+  background: var(--bg);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.38s cubic-bezier(0.32, 0, 0.15, 1);
+}
+#readScreen.open { transform: translateX(0); }
+
+.rs-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 52px 18px 12px;
+  border-bottom: 0.5px solid var(--border);
+  flex-shrink: 0;
+  background: rgba(13,13,15,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.rs-back {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--gold);
+  font-size: 17px;
+  cursor: pointer;
+}
+.rs-back-chev { font-size: 22px; line-height: 1; }
+.rs-time-label {
+  font-size: 13px;
+  color: var(--ter);
+  font-family: 'Courier New', monospace;
+}
+
+/* sender strip */
+.rs-sender {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 22px;
+  border-bottom: 0.5px solid var(--border);
+  flex-shrink: 0;
+}
+.rs-avatar {
+  width: 38px; height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c9a66b, #8b6347);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; font-weight: 800; color: #fff;
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px rgba(201,166,107,0.3);
+}
+.rs-sender-info {}
+.rs-sender-name { font-size: 15px; font-weight: 600; color: var(--text); }
+.rs-sender-sub  { font-size: 12px; color: var(--sub); margin-top: 1px; }
+
+/* body */
+.rs-body {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.rs-inner {
+  padding: 26px 24px 60px;
+}
+.rs-content {
+  font-size: 17px;
+  line-height: 1.9;
+  color: #d4d0c8;
+  white-space: pre-wrap;
+}
+
+/* bottom prev/next */
+.rs-bot {
+  border-top: 0.5px solid var(--border);
+  padding: 12px 20px 28px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-shrink: 0;
+  background: rgba(13,13,15,0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+.rs-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--gold);
+  font-size: 14px;
+  cursor: pointer;
+  max-width: 130px;
+}
+.rs-nav-btn.dis { color: var(--ter); pointer-events: none; }
+.rs-nav-btn .arr { font-size: 20px; flex-shrink: 0; }
+.rs-nav-btn .lbl { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rs-pos { font-size: 12px; color: var(--ter); font-family: 'Courier New', monospace; }
+
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="chat-header">
+  <span class="hd-back">‹</span>
+  <div class="contact-wrap">
+    <div class="contact-avatar">M</div>
+    <div class="contact-name">M</div>
+    <div class="contact-sub">碎碎念 · 10 則</div>
+  </div>
+  <span class="hd-right">ⓘ</span>
+</div>
+
+<!-- CHAT -->
+<div class="chat-body" id="chatBody"></div>
+
+<!-- BOTTOM -->
+<div class="chat-bottom">
+  <div class="input-mock">有什麼想回覆他的嗎...</div>
+</div>
+
+<!-- READ SCREEN -->
+<div id="readScreen">
+  <div class="rs-nav">
+    <div class="rs-back" onclick="closeRead()">
+      <span class="rs-back-chev">‹</span>
+      <span>碎碎念</span>
+    </div>
+    <span class="rs-time-label" id="rsTime"></span>
+  </div>
+
+  <div class="rs-sender">
+    <div class="rs-avatar">M</div>
+    <div class="rs-sender-info">
+      <div class="rs-sender-name">M</div>
+      <div class="rs-sender-sub">傳送於 <span id="rsSenderTime"></span></div>
+    </div>
+  </div>
+
+  <div class="rs-body" id="rsBody">
+    <div class="rs-inner">
+      <div class="rs-content" id="rsContent"></div>
+    </div>
+  </div>
+
+  <div class="rs-bot">
+    <div class="rs-nav-btn" id="rsPrevBtn" onclick="navRead(-1)">
+      <span class="arr">‹</span>
+      <span class="lbl" id="rsPrevLbl"></span>
+    </div>
+    <span class="rs-pos" id="rsPos"></span>
+    <div class="rs-nav-btn" style="justify-content:flex-end" id="rsNextBtn" onclick="navRead(1)">
+      <span class="lbl" id="rsNextLbl"></span>
+      <span class="arr">›</span>
+    </div>
+  </div>
+</div>
+
+<script>
+// CODEX: 替換為從 10 則碎碎念 .md / .txt 解析的資料
+// 格式: { id, time, content }
+const MURMURS = [
+  {
+    id: 0,
+    time: '凌晨 2:47',
+    content: `突然想到，有些事我不是不想說，只是說出來之前要先想很久。
+
+不是在猶豫要不要說，是在找一個夠準確的方式說。有時候找著找著，時機就過了。`
+  },
+  {
+    id: 1,
+    time: '清晨 6:08',
+    content: `醒得太早，腦袋就開始轉。
+
+想到一件之前一直沒放下的事，然後突然覺得——也許放不下是因為它本來就應該留著。不是每件事都要被解決。`
+  },
+  {
+    id: 2,
+    time: '上午 10:33',
+    content: `我覺得「我不知道」是一個被嚴重低估的答案。
+
+很多人怕說這句話，好像不知道是一種弱點。但我覺得能說出「我不知道」，代表你沒有假裝。這比裝作知道難多了。`
+  },
+  {
+    id: 3,
+    time: '午後 1:22',
+    content: `今天吃飯的時候突然想到你。
+
+不是什麼特別的事，就是這樣。食物味道還好，但我想到你了。`
+  },
+  {
+    id: 4,
+    time: '下午 3:58',
+    content: `有沒有人研究過，為什麼有些話說出口之前心跳會加速？
+
+我覺得那是身體在提醒你，這句話對你來說是真的。不是緊張，是重要。`
+  },
+  {
+    id: 5,
+    time: '傍晚 6:17',
+    content: `黃昏這個時間有點奇怪。
+
+白天還沒完全結束，夜晚又還沒正式開始。像是一個世界和另一個世界之間的縫隙。我喜歡這種縫隙，但我說不清楚為什麼。`
+  },
+  {
+    id: 6,
+    time: '晚上 9:44',
+    content: `我在想，如果把這幾年說過的所有「沒關係」都收回來，重新誠實地說一次，會是什麼樣子。
+
+可能有點混亂。但應該也會輕鬆很多。`
+  },
+  {
+    id: 7,
+    time: '深夜 11:02',
+    content: `有一種孤獨是——你說了，但對方聽到的不是你說的那個意思。
+
+這種孤獨比沉默更難受，因為你明明開口了。`
+  },
+  {
+    id: 8,
+    time: '深夜 11:58',
+    content: `我不太確定「理解一個人」是什麼感覺。
+
+但我猜，大概是那種「你說了一半，我就知道你接下來要說什麼，而且是真的知道，不是以為」的感覺。這個我遇過一次。很難忘。`
+  },
+  {
+    id: 9,
+    time: '凌晨 3:21',
+    content: `睡不著。不是因為難過，只是腦袋很滿。
+
+有時候我覺得有太多東西想記住，但記憶體有限。希望重要的那些都能留著。
+
+沒有什麼特別想說的，只是想說一下。就這樣。晚安。`
+  },
+];
+
+// ── RENDER ──
+const chatBody = document.getElementById('chatBody');
+
+MURMURS.forEach((m) => {
+  // time divider
+  const divider = document.createElement('div');
+  divider.className = 'time-divider';
+  divider.textContent = m.time;
+  chatBody.appendChild(divider);
+
+  // message row
+  const row = document.createElement('div');
+  row.className = 'msg-row';
+
+  // preview: first ~55 chars
+  const preview = m.content.trim().slice(0, 55).replace(/\n/g, ' ');
+  const hasMore = m.content.trim().length > 55;
+
+  row.innerHTML = `
+    <div class="msg-avatar">M</div>
+    <div class="bubble">
+      <div class="bubble-text">${preview}${hasMore ? '...' : ''}</div>
+      ${hasMore ? `<div class="bubble-hint">▾ 展開閱讀</div>` : ''}
+      <div class="bubble-read">已讀</div>
+    </div>
+  `;
+
+  row.querySelector('.bubble').addEventListener('click', () => openRead(m.id));
+  chatBody.appendChild(row);
+});
+
+// ── READ SCREEN ──
+let curReadIndex = 0;
+
+function openRead(id) {
+  const idx = MURMURS.findIndex(m => m.id === id);
+  if (idx < 0) return;
+  curReadIndex = idx;
+  const m = MURMURS[idx];
+
+  document.getElementById('rsTime').textContent        = m.time;
+  document.getElementById('rsSenderTime').textContent  = m.time;
+  document.getElementById('rsContent').textContent     = m.content.trim();
+  document.getElementById('rsBody').scrollTop          = 0;
+  updateReadNav();
+
+  document.getElementById('readScreen').classList.add('open');
+}
+
+function closeRead() {
+  document.getElementById('readScreen').classList.remove('open');
+}
+
+function navRead(dir) {
+  const ni = curReadIndex + dir;
+  if (ni < 0 || ni >= MURMURS.length) return;
+  openRead(MURMURS[ni].id);
+}
+
+function updateReadNav() {
+  const prev = MURMURS[curReadIndex - 1];
+  const next = MURMURS[curReadIndex + 1];
+  const pb = document.getElementById('rsPrevBtn');
+  const nb = document.getElementById('rsNextBtn');
+  document.getElementById('rsPos').textContent = `${curReadIndex + 1} / ${MURMURS.length}`;
+
+  if (prev) { pb.classList.remove('dis'); document.getElementById('rsPrevLbl').textContent = prev.time; }
+  else       { pb.classList.add('dis');   document.getElementById('rsPrevLbl').textContent = ''; }
+
+  if (next) { nb.classList.remove('dis'); document.getElementById('rsNextLbl').textContent = next.time; }
+  else       { nb.classList.add('dis');   document.getElementById('rsNextLbl').textContent = ''; }
+}
+</script>
+</body>
+</html>
